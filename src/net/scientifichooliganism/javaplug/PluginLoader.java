@@ -167,7 +167,7 @@ public class PluginLoader {
 
 	/**.*/
 	public static ActionCatalog loadActionCatalog () {
-		ActionCatalog ac = new ActionCatalog();
+		ActionCatalog ac = ActionCatalog.getInstance();
 
 		try {
 			ConcurrentHashMap<String, String> plugins = findPlugins();
@@ -234,13 +234,6 @@ public class PluginLoader {
 				System.out.println("messin' with the classloader failed:");
 				exc.printStackTrace();
 			}
-
-			//add actions
-
-			//System.out.println("============================================================");
-				//for every plugin
-					//find the class that implements the plugin interface
-					//register the classes and methods from the class that implements the plugin interface
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
@@ -251,10 +244,31 @@ public class PluginLoader {
 
 	public static void main (String [] args) {
 		ActionCatalog ac = loadActionCatalog();
+		ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource");
+		ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "query");
+		ac.setPluginActive("XMLDataStorePlugin", true);
+		ac.setPluginStorage("XMLDataStorePlugin", true);
 
-		//
+		for (String plugin : ac.keySet()) {
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
+		}
+
+		//System.out.println(String.valueOf(ac.isPluginActive("XMLDataStorePlugin")));
+		//System.out.println(String.valueOf(ac.isPluginStorage("XMLDataStorePlugin")));
+
+		//ac.findAction("query");
+		//ac.findAction("XMLDataStorePlugin query");
+		//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmlplugin.XMLDataStorePlugin query");
+
+		DataLayer dl = DataLayer.getInstance();
+		dl.query(ac, "select action");
+
+		//load xml plugin
+		//read plugin data from xml
+		//add actions
 
 		try {
+			/*
 			String strPluginClass = "net.scientifichooliganism.helloworldplugin.HelloWorldPlugin";
 			String strPluginMethod = "printMessage";
 			Class klass = Class.forName(strPluginClass);
@@ -278,6 +292,7 @@ public class PluginLoader {
 
 				objectMethod.invoke(null, null);
 			}
+			*/
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
