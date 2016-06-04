@@ -22,4 +22,8 @@ public class ValueObject {
 
 		label = in;
 	}
+
+	public String toString () {
+		return "label: " + String.valueOf(label) + "\n";
+	}
 }

@@ -31,6 +31,19 @@ public class Action extends ValueObject {
 		}
 	}
 
+	public String toString() {
+		String ret = super.toString();
+		ret = ret + "id: " + String.valueOf(id) + "\n";
+		ret = ret + "name: " + String.valueOf(name) + "\n";
+		ret = ret + "description: " + String.valueOf(description) + "\n";
+		ret = ret + "module: " + String.valueOf(module) + "\n";
+		ret = ret + "klass: " + String.valueOf(klass) + "\n";
+		ret = ret + "url: " + String.valueOf(url) + "\n";
+		ret = ret + "method: " + String.valueOf(method) + "\n";
+		ret = ret + "active: " + String.valueOf(active) + "\n";
+		return ret;
+	}
+
 	public int getID () {
 		return id;
 	}
