@@ -25,6 +25,16 @@ public class Configuration extends ValueObject {
 		}
 	}
 
+	public String toString() {
+		String ret = super.toString();
+		ret = ret + "id: " + String.valueOf(id) + "\n";
+		ret = ret + "module: " + String.valueOf(module) + "\n";
+		ret = ret + "sequence: " + String.valueOf(sequence) + "\n";
+		ret = ret + "key: " + String.valueOf(key) + "\n";
+		ret = ret + "value: " + String.valueOf(value) + "\n";
+		return ret;
+	}
+
 	public int getID () {
 		return id;
 	}

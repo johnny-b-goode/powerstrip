@@ -483,15 +483,13 @@ public final class ActionCatalog {
 		}
 		*/
 
-		System.out.println("setPluginStorage(String, boolean)");
-		System.out.println("	pluginName: " + pluginName);
-		System.out.println("	pluginState: " + pluginState);
+		//System.out.println("setPluginStorage(String, boolean)");
+		//System.out.println("	pluginName: " + pluginName);
+		//System.out.println("	pluginState: " + pluginState);
 		if (pluginsStorage.contains(pluginName)) {
-			System.out.println("	1");
 			pluginsStorage.replace(pluginName, pluginState);
 		}
 		else {
-			System.out.println("	2");
 			pluginsStorage.put(pluginName, pluginState);
 		}
 	}
@@ -558,7 +556,7 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with an empty string");
 		}
 
-		System.out.println("performAction(String, String, String, Object[])");
+		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
 		Object ret = null;
 
 		if (isPluginActive(pluginName)) {
@@ -590,7 +588,7 @@ public final class ActionCatalog {
 				Method objectMethod = null;
 
 				if (objects.containsKey(actions[action][1])) {
-					//System.out.println("	found cached object");
+					System.out.println("	found cached object");
 					objectInstance = objects.get(actions[action][1]);
 				}
 				else {
@@ -648,7 +646,7 @@ public final class ActionCatalog {
 				}
 
 				if (objectMethod != null) {
-					//System.out.println("	objectMethod: " + objectMethod.getName());
+					System.out.println("	objectMethod: " + objectMethod.getName());
 					if (Modifier.isStatic(objectMethod.getModifiers())) {
 						System.out.println("	" + objectMethod.getName() + " is static");
 						ret = objectMethod.invoke(null, arguments);

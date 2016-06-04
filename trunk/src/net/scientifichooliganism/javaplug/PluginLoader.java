@@ -10,6 +10,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.util.Vector;
+
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -261,7 +263,8 @@ public class PluginLoader {
 		//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmlplugin.XMLDataStorePlugin query");
 
 		DataLayer dl = DataLayer.getInstance();
-		dl.query(ac, "select action");
+		//Vector actions = (Vector)dl.query(ac, "SELECT action FROM plugin");
+		Vector actions = (Vector)dl.query(ac, "SELECT config FROM plugin");
 
 		//load xml plugin
 		//read plugin data from xml

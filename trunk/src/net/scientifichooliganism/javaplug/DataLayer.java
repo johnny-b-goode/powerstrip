@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Vector;
 
 import net.scientifichooliganism.javaplug.interfaces.Store;
+import net.scientifichooliganism.javaplug.vo.ValueObject;
 
 public final class DataLayer {
 	private static DataLayer instance;
@@ -65,11 +66,28 @@ public final class DataLayer {
 				System.out.println("		" + action[1]);
 				System.out.println("		" + action[2]);
 				Vector temp = (Vector)ac.performAction(action[0], action[1], action[2], new Object[]{query});
+
+				if (temp != null) {
+					if (temp.size() > 0) {
+						for (Object obj: temp) {
+							((ValueObject)obj).setLabel(action[0] + "|" + ((ValueObject)obj).getLabel());
+						}
+					}
+				}
+
 				ret.addAll(temp);
 			}
 		}
 
 		//dump collection to console
+		System.out.println("	contents of ret: ");
+		if (ret != null) {
+			if (ret.size() > 0) {
+				for (Object obj: ret) {
+					System.out.println(String.valueOf(obj));
+				}
+			}
+		}
 
 		return null;
 	}
