@@ -1,23 +1,18 @@
 package net.scientifichooliganism.javaplug;
 
 import java.io.IOException;
-//import javax.servlet.*;
+import java.io.PrintWriter;
+
+import java.util.Map;
+
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public final class WebSvcLayer {
-	private static WebSvcLayer instance;
 
 	private WebSvcLayer() {
 		//
-	}
-
-	public static WebSvcLayer getInstance () {
-		if (instance == null) {
-			instance = new WebSvcLayer();
-		}
-
-		return instance;
 	}
 
 	public static void main (String [] args) {
@@ -31,16 +26,24 @@ public final class WebSvcLayer {
 
 	public void doGet (HttpServletRequest request, HttpServletResponse response) throws
 		ServletException, IOException {
-		response.setStatus(HttpServletResponse.SC_OK);
 		response.setContentType("text/plain");
 		PrintWriter pwResponse = response.getWriter();
 
 		try {
-			String operation = request.getPathInfo();
-			String operands[] = request.getParameterValues("operand");
+			response.setStatus(HttpServletResponse.SC_OK);
+			pwResponse.println("request.getPathInfo(): " + request.getPathInfo());
+			Map parameters = request.getParameterMap();
+
+			if ((parameters != null) && (parameters.size() > 0)) {
+				for (Object obj : parameters.keySet()) {
+					pwResponse.println(((String)obj) + ": " + ((String)parameters.get(obj)));
+				}
+			}
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			pwResponse.println("ERROR");
 		}
 	}
 }
