@@ -25,6 +25,8 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
+import net.scientifichooliganism.javaplug.vo.*;
+
 /**
 * This class does stuff, maybe.
 */
@@ -245,57 +247,88 @@ public class PluginLoader {
 	}
 
 	public static void main (String [] args) {
-		ActionCatalog ac = loadActionCatalog();
-		ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource");
-		ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "query");
-		ac.setPluginActive("XMLDataStorePlugin", true);
-		ac.setPluginStorage("XMLDataStorePlugin", true);
-
-		for (String plugin : ac.keySet()) {
-			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
-		}
-
-		//System.out.println(String.valueOf(ac.isPluginActive("XMLDataStorePlugin")));
-		//System.out.println(String.valueOf(ac.isPluginStorage("XMLDataStorePlugin")));
-
-		//ac.findAction("query");
-		//ac.findAction("XMLDataStorePlugin query");
-		//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmlplugin.XMLDataStorePlugin query");
-
-		DataLayer dl = DataLayer.getInstance();
-		//Vector actions = (Vector)dl.query(ac, "SELECT action FROM plugin");
-		Vector actions = (Vector)dl.query(ac, "SELECT config FROM plugin");
-
-		//load xml plugin
-		//read plugin data from xml
-		//add actions
-
 		try {
-			/*
-			String strPluginClass = "net.scientifichooliganism.helloworldplugin.HelloWorldPlugin";
-			String strPluginMethod = "printMessage";
-			Class klass = Class.forName(strPluginClass);
-			Method [] methods = klass.getDeclaredMethods();
-			Method objectMethod = null;
+			ActionCatalog ac = loadActionCatalog();
+			//load xml plugin
+			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource");
+			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "query");
+			ac.setPluginActive("XMLDataStorePlugin", true);
+			ac.setPluginStorage("XMLDataStorePlugin", true);
 
-			if (methods.length > 0) {
-				for (Method m : methods) {
-					if (m.getName().equals(strPluginMethod)) {
-						objectMethod = m;
+			for (String plugin : ac.keySet()) {
+				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
+			}
+
+			//Initialize a data directory that is sibling to plugins for the initial default
+
+			//System.out.println(String.valueOf(ac.isPluginActive("XMLDataStorePlugin")));
+			//System.out.println(String.valueOf(ac.isPluginStorage("XMLDataStorePlugin")));
+
+			//ac.findAction("query");
+			//ac.findAction("XMLDataStorePlugin query");
+			//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmlplugin.XMLDataStorePlugin query");
+
+			DataLayer dl = DataLayer.getInstance();
+			//read plugin data from xml
+			Vector<Action> actions = (Vector<Action>)dl.query(ac, "SELECT action FROM plugin");
+			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "SELECT config FROM plugin");
+
+			/*
+			All plugins will be disabled
+			All actions will be removed from AC
+			Actions in the actions vector will be added to AC
+			Plugins will be configured - being enabled if appropriate
+			*/
+
+			for (String plugin : ac.keySet()) {
+				String path = ac.getPluginPath(plugin);
+				/*This will remove the plugin, all actions associated with it, and
+				whether or not it is enabled and / or a storage plugin.
+				*/
+				ac.removePlugin(plugin);
+				ac.addPlugin(plugin, path);
+			}
+
+			//System.out.println("actions:");
+			if (actions != null) {
+				if (actions.size() > 0) {
+					for (Action act : actions) {
+						//System.out.println("	module: " + act.getModule());
+						//System.out.println("	class: " + act.getKlass());
+						//System.out.println("	method: " + act.getMethod());
+						ac.addAction(act.getModule(), act.getKlass(), act.getMethod());
 					}
 				}
 			}
 
-			if (objectMethod != null) {
-				Object objectInstance = null;
+			if (configs != null) {
+				if (configs.size() > 0) {
+					for (Configuration conf : configs) {
+						if (conf.getKey().toLowerCase().trim().equals("active")) {
+							ac.setPluginActive(conf.getModule(), conf.getValue());
+						}
+						else if (conf.getKey().toLowerCase().trim().equals("storage")) {
+							ac.setPluginStorage(conf.getModule(), conf.getValue());
+						}
+					}
 
-				if (Modifier.isStatic(objectMethod.getModifiers())) {
-					//System.out.println("Yeaup, it's static alright.");
+					//this is done in a second pass to ensure the plugins have been activated so that the proper action can be called.
+					for (Configuration conf : configs) {
+						if ((! conf.getKey().toLowerCase().trim().equals("active")) && (! conf.getKey().toLowerCase().trim().equals("storage"))) {
+							try {
+								String [] action = ac.findAction(conf.getModule() + ".setProperty");
+
+								if ((action != null) && (action.length > 0)) {
+									ac.performAction(action[0], action[1], action[2], new Object[]{conf.getValue()});
+								}
+							}
+							catch (Exception exc) {
+								exc.printStackTrace();
+							}
+						}
+					}
 				}
-
-				objectMethod.invoke(null, null);
 			}
-			*/
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();

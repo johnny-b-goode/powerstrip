@@ -89,6 +89,7 @@ public final class ActionCatalog {
 
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.addAction(String, String, String)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
 		}
@@ -117,8 +118,12 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with an empty string");
 		}
 
+		if (actions.length == 0) {
+			actions = new String[1][3];
+		}
+
 		//if the first entry is null then nothing has been added to the list of actions
-		if (actions[0][0] == null) {
+		if ((actions.length > 0) && (actions[0][0] == null)) {
 			actions[0][0] = pluginName;
 			actions[0][1] = className;
 			actions[0][2] = methodName;
@@ -138,7 +143,6 @@ public final class ActionCatalog {
 			actions = newActions;
 		}
 
-		//System.out.println("addAction(String, String, String)");
 		//for (int i = 0; i < actions.length; i++) {
 		//	for (int j = 0; j < actions[0].length; j++) {
 		//		System.out.println("	" + actions[i][j]);
@@ -146,6 +150,7 @@ public final class ActionCatalog {
 		//}
 	}
 
+	/**find an action*/
 	public String[] findAction (String query) throws IllegalArgumentException {
 		if (query == null) {
 			throw new IllegalArgumentException("findAction(String) was called with a null string");
@@ -265,8 +270,12 @@ public final class ActionCatalog {
 			pluginsEnabled.remove(pluginName);
 		}
 
+		if (pluginsStorage.containsKey(pluginName)) {
+			pluginsStorage.remove(pluginName);
+		}
+
 		for (String[] action : actions) {
-			System.out.println("	" + action[0]);
+			//System.out.println("	" + action[0]);
 			if (action[0].equals(pluginName)) {
 				removeAction(action[0], action[1], action[2]);
 			}
@@ -275,6 +284,7 @@ public final class ActionCatalog {
 
 	/**remove an action from the catalog*/
 	public void removeAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.removeAction(String, String, String)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("removeAction(String, String, String) was called with a null string");
 		}
@@ -299,7 +309,12 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("removeAction(String, String, String) was called with an empty string");
 		}
 
-		String newActions[][] = new String[actions.length - 1][actions[0].length];
+		String newActions[][] = new String[1][3];
+
+		if (actions.length > 1) {
+			newActions = new String[actions.length - 1][actions[0].length];
+		}
+
 		boolean found = false;
 
 		for (int i = 0; i < actions.length; i++) {
@@ -324,17 +339,20 @@ public final class ActionCatalog {
 			}
 		}
 
-		actions = newActions;
+		if (found) {
+			actions = newActions;
+		}
+
 		/*we only want to remove class and method objects if there are no more references to them*/
 		boolean classFound = false;
 		boolean methodFound = false;
 
 		for (int i = 0; i < actions.length; i++) {
-			if (actions[i][1].equals(className)) {
+			if ((actions[i][1] != null) && (actions[i][1].equals(className))) {
 				classFound = true;
 			}
 
-			if (actions[i][2].equals(methodName)) {
+			if ((actions[i][2] != null) && (actions[i][2].equals(methodName))) {
 				methodFound = true;
 			}
 
@@ -354,18 +372,11 @@ public final class ActionCatalog {
 				methods.remove(methodName);
 			}
 		}
-
-		System.out.println("removeAction(String, String, String)");
-
-		for (int i = 0; i < actions.length; i++) {
-			for (int j = 0; j < actions[0].length; j++) {
-				System.out.println("	" + actions[i][j]);
-			}
-		}
 	}
 
 	/**set the active state on a plugin*/
 	public void setPluginActive (String pluginName, String pluginState) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.setPluginActive (String, String)");
 		if (pluginState == null) {
 			throw new IllegalArgumentException("setPluginActive (String, String) was called with a null string");
 		}
@@ -384,6 +395,7 @@ public final class ActionCatalog {
 
 	/**set the active state on a plugin*/
 	public void setPluginActive (String pluginName, boolean pluginState) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.setPluginActive (String, boolean)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("setPluginActive (String, boolean) was called with a null string");
 		}
@@ -437,6 +449,7 @@ public final class ActionCatalog {
 
 	/**flag the plugin as a storage plugin*/
 	public void setPluginStorage (String pluginName, String pluginState) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.setPluginStorage (String, String)");
 		if (pluginState == null) {
 			throw new IllegalArgumentException("setPluginStorage (String, String) was called with a null string");
 		}
@@ -458,6 +471,7 @@ public final class ActionCatalog {
 	which will prevent the actions associated with the plugin being automatically exposed
 	through the web service layer.*/
 	public void setPluginStorage (String pluginName, boolean pluginState) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.setPluginStorage (String, boolean)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("setPluginActive (String, boolean) was called with a null string");
 		}
@@ -470,22 +484,6 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("setPluginStorage(String, boolean) was called for a plugin that does not exist in the catalog");
 		}
 
-		/*Actions associated with storage plugins are not allowed to be directly executed.
-		As a result, any currently available actions will be removed prior to setting the
-		plugin as a storage plugin.*/
-		//or not
-		/*
-		for (String[] action : actions) {
-			//System.out.println("	" + action[0]);
-			if (action[0].equals(pluginName)) {
-				removeAction(action[0], action[1], action[2]);
-			}
-		}
-		*/
-
-		//System.out.println("setPluginStorage(String, boolean)");
-		//System.out.println("	pluginName: " + pluginName);
-		//System.out.println("	pluginState: " + pluginState);
 		if (pluginsStorage.contains(pluginName)) {
 			pluginsStorage.replace(pluginName, pluginState);
 		}

@@ -8,7 +8,6 @@ public class Action extends ValueObject {
 	private String klass;
 	private String url;
 	private String method;
-	private boolean active;
 
 	public Action () {
 		super();
@@ -19,7 +18,6 @@ public class Action extends ValueObject {
 		klass = null;
 		url = null;
 		method = null;
-		active = false;
 	}
 
 	public static void main (String [] args) {
@@ -33,27 +31,13 @@ public class Action extends ValueObject {
 
 	public String toString() {
 		String ret = super.toString();
-		ret = ret + "id: " + String.valueOf(id) + "\n";
 		ret = ret + "name: " + String.valueOf(name) + "\n";
 		ret = ret + "description: " + String.valueOf(description) + "\n";
 		ret = ret + "module: " + String.valueOf(module) + "\n";
 		ret = ret + "klass: " + String.valueOf(klass) + "\n";
 		ret = ret + "url: " + String.valueOf(url) + "\n";
 		ret = ret + "method: " + String.valueOf(method) + "\n";
-		ret = ret + "active: " + String.valueOf(active) + "\n";
 		return ret;
-	}
-
-	public int getID () {
-		return id;
-	}
-
-	public void setID (int in) throws IllegalArgumentException {
-		if (in < 0) {
-			throw new IllegalArgumentException("setID(int) was called with a value less than zero");
-		}
-
-		id = in;
 	}
 
 	public String getName () {
@@ -152,13 +136,5 @@ public class Action extends ValueObject {
 		}
 
 		method = in;
-	}
-
-	public boolean isActive () {
-		return active;
-	}
-
-	public void setActive (boolean in) {
-		active = in;
 	}
 }
