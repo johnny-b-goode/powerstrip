@@ -1,7 +1,6 @@
 package net.scientifichooliganism.javaplug.vo;
 
 public class Configuration extends ValueObject {
-	private int id;
 	private String module;
 	private int sequence;
 	private String key;
@@ -9,7 +8,6 @@ public class Configuration extends ValueObject {
 
 	public Configuration () {
 		super();
-		id = -1;
 		module = null;
 		sequence = -1;
 		key = null;
@@ -27,24 +25,11 @@ public class Configuration extends ValueObject {
 
 	public String toString() {
 		String ret = super.toString();
-		ret = ret + "id: " + String.valueOf(id) + "\n";
 		ret = ret + "module: " + String.valueOf(module) + "\n";
 		ret = ret + "sequence: " + String.valueOf(sequence) + "\n";
 		ret = ret + "key: " + String.valueOf(key) + "\n";
 		ret = ret + "value: " + String.valueOf(value) + "\n";
 		return ret;
-	}
-
-	public int getID () {
-		return id;
-	}
-
-	public void setID (int in) throws IllegalArgumentException {
-		if (in < 0) {
-			throw new IllegalArgumentException("setID(int) was called with a value less than zero");
-		}
-
-		id = in;
 	}
 
 	public String getModule () {
