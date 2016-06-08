@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="Java_Plugin_Library" default="build" basedir="..">
+<project name="Java_Plugin_Library" default="all" basedir="..">
 	<!--The tstamp tag allows us to use the DSTAMP, TSTAMP, and TODAY properties
 	later. These are the date stamp, time stamp, and the date in the format of
 	four letter month, two digit day, and four digit year.-->
@@ -9,13 +9,16 @@
 	<property name="bin" value="${basedir}/bin" />
 	<property name="doc" value="${basedir}/doc" />
 	<property name="jar" value="${basedir}/jar" />
+	<property name="war" value="${basedir}/war" />
 	<property name="tst" value="${basedir}/tst" />
+	<property name="rsrc" value="${basedir}/rsrc" />
 	<property name="rslt" value="${basedir}/junit_results" />
-	<!--property name="mnfst" value="${basedir}/META-INF/MANIFEST.MF" /-->
 	<property name="info.txt" value="${basedir}/info.txt" />
 	<property name="store" value="\\some_hostname" />
 	<property name="jarbasename" value="javaplug" />
 	<property name="jarextension" value=".jar" />
+	<property name="warbasename" value="ROOT" />
+	<property name="warextension" value=".war" />
 	<!--sonar properties-->
 	<property name="sonar-project.properties" value="${basedir}/sonar-project.properties" />
 	<property name="sonar.projectName" value="${ant.project.name}" />
@@ -79,14 +82,20 @@
 	<target name="prep" description="">
 		<delete dir="${bin}" failonerror="false" includeemptydirs="true" />
 		<delete dir="${jar}" failonerror="false" includeemptydirs="true" />
+		<delete dir="${war}" failonerror="false" includeemptydirs="true" />
 		<delete dir="${lib}" failonerror="false" includeemptydirs="true" />
 		<!--delete dir="${rslt}" failonerror="false" includeemptydirs="true" /-->
 		<!--delete dir="${doc}" failonerror="false" includeemptydirs="true" /-->
 		<mkdir dir="${bin}" />
 		<mkdir dir="${jar}" />
+		<mkdir dir="${war}" />
 		<mkdir dir="${lib}" />
 		<!--mkdir dir="${rslt}" /-->
 		<!--mkdir dir="${doc}" /-->
+	</target>
+
+	<target name="update_libs" description="">
+		<get src="http://repo1.maven.org/maven2/org/apache/tomcat/tomcat-servlet-api/8.0.30/tomcat-servlet-api-8.0.30.jar" dest="${lib}" verbose="true" usetimestamp="true" maxtime="60" retries="1" />
 	</target>
 
 	<target name="clean_bin">
@@ -98,6 +107,12 @@
 	<target name="clean_jar">
 		<delete includeemptydirs="true" verbose="true" >
 			<fileset dir="${jar}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="clean_war">
+		<delete includeemptydirs="true" verbose="true" >
+			<fileset dir="${war}" includes="**/*" />
 		</delete>
 	</target>
 
@@ -119,7 +134,7 @@
 		</delete>
 	</target>
 
-	<target name="clean" depends="clean_log,clean_sonar,clean_bin,clean_jar,clean_tests,clean_rslt,clean_doc" description=""/>
+	<target name="clean" depends="clean_log,clean_sonar,clean_bin,clean_jar,clean_war,clean_tests,clean_rslt,clean_doc" description=""/>
 
 	<target name="compile" depends="clean_bin,log" description="">
 		<javac srcdir="${src}" includeantruntime="false" destdir="${bin}" includes="**/*.java">
@@ -168,6 +183,13 @@
 		</jar>
 	</target>
 
+	<target name="war" depends="clean_war" description="">
+		<war destfile="${war}/${warbasename}${warextension}" webxml="${rsrc}/WEB-INF/web.xml" needxmlfile="true" whenmanifestonly="fail" duplicate="fail">
+			<zipfileset dir="${lib}" includes="**/*.jar" excludes="**/tomcat*" prefix="WEB-INF/lib" />
+			<zipfileset dir="${jar}" includes="**/*.jar" prefix="WEB-INF/lib" />
+		</war>
+	</target>
+
 	<target name="javadoc" depends="clean_doc" description="">
 		<javadoc destdir="${doc}" author="true" version="true" use="true" windowtitle="JavaPlug Documentation">
 			<fileset dir="${src}" />
@@ -177,7 +199,7 @@
 		</javadoc>
 	</target>
 
-	<target name="build" depends="prep,compile,jar" description=""/>
+	<target name="build" depends="compile,jar,war" description=""/>
 
-	<target name="all" depends="prep,compile,compile_tests,run_tests,jar,javadoc" description=""/>
+	<target name="all" depends="prep,update_libs,compile,compile_tests,run_tests,jar,javadoc" description=""/>
 </project>
