@@ -90,7 +90,7 @@ public final class ActionCatalog {
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
 //		System.out.println("ActionCatalog.addAction(String, String, String)");
-		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
+//		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
 		}
