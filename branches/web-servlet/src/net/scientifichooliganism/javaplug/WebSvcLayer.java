@@ -56,19 +56,7 @@ public final class WebSvcLayer extends HttpServlet {
 				}
 			}
 
-			if(actionCatalog == null){
-				pwResponse.println("ACTION CATALOG NULL!!!!");
-			}
-
-			for(String pluginKey : actionCatalog.plugins.keySet()){
-				pwResponse.println("Plugin Key: " + pluginKey + " - Plugin: " + actionCatalog.plugins.get(pluginKey));
-			}
-
 			actionCatalog.performAction(plugin, actionCatalog.plugins.get(plugin), action, new Object[]{"My Message!"});
-
-			for(String method : actionCatalog.methods.keySet()) {
-				pwResponse.println("methodKey: " + method + " Method: " + actionCatalog.methods.get(method));
-			}
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();

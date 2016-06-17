@@ -288,7 +288,6 @@ public class PluginLoader {
 				*/
 				ac.removePlugin(plugin);
 				ac.addPlugin(plugin, path);
-				ac.setPluginActive(plugin, true);
 			}
 
 //			System.out.println("actions:");

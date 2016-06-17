@@ -89,10 +89,10 @@ public final class DataLayer {
 			and the return type does not need to be specified (because we know the return type
 			is going to be some form of java.util.Collection)*/
 			String action[] = ac.findAction(plugin + " " + "query");
-			System.out.println("	action: ");
-			System.out.println("		" + action[0]);
-			System.out.println("		" + action[1]);
-			System.out.println("		" + action[2]);
+//			System.out.println("	action: ");
+//			System.out.println("		" + action[0]);
+//			System.out.println("		" + action[1]);
+//			System.out.println("		" + action[2]);
 			ret = (Vector)ac.performAction(action[0], action[1], action[2], new Object[]{query});
 
 			try{
@@ -120,6 +120,8 @@ public final class DataLayer {
 
 		for (String plugin : ac.keySet()) {
 			if ((ac.isPluginStorage(plugin)) && (ac.isPluginActive(plugin))) {
+//				System.out.println("    plugin: " + plugin);
+//				System.out.println("    query: " + query);
 				ret.addAll(queryPlugin(ac, plugin, query));
 			}
 		}

@@ -163,7 +163,7 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("findAction(String) was called with an empty string");
 		}
 
-//		System.out.println("ActionCatalog.findAction(String, String)");
+		System.out.println("ActionCatalog.findAction(String, String)");
 		query = query.trim();
 		String ret[] = null;
 		String queryMethod = null;
