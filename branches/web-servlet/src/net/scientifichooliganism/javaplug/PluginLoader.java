@@ -200,8 +200,8 @@ public class PluginLoader {
 				mthd.setAccessible(true);
 
 				for (String plugin : ac.keySet()) {
-//					System.out.println("	plugin: " + plugin);
-//					System.out.println("	pluginPath: " + ac.getPluginPath(plugin));
+					System.out.println("	plugin: " + plugin);
+					System.out.println("	pluginPath: " + ac.getPluginPath(plugin));
 					URL url = null;
 
 					try {
@@ -219,7 +219,7 @@ public class PluginLoader {
 						throw new RuntimeException("url is empty");
 					}
 
-//					System.out.println("	attempting to load " + String.valueOf(url));
+					System.out.println("	attempting to load " + String.valueOf(url));
 					mthd.invoke((defaultClassLoader), new Object[]{url});
 				}
 
@@ -251,6 +251,9 @@ public class PluginLoader {
 			}
 			ActionCatalog ac = loadActionCatalog();
 			//load xml plugin
+			ac.addAction("XMLPlugin", "net.scientifichooliganism.xmlplugin.XMLPlugin", "objectFromNode");
+			ac.setPluginActive("XMLPlugin", true);
+
 			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource");
 			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "query");
 			ac.setPluginActive("XMLDataStorePlugin", true);

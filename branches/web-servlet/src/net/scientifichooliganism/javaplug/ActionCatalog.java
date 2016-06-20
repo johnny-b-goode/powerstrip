@@ -59,6 +59,7 @@ public final class ActionCatalog {
 
 	/**add a plugin*/
 	public void addPlugin (String pluginName, String pluginPath) throws IllegalArgumentException {
+		System.out.println("Adding plugin: " + pluginName + " with path: " + pluginPath);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addPlugin (String, String) was called with a null string");
 		}
@@ -90,7 +91,7 @@ public final class ActionCatalog {
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
 //		System.out.println("ActionCatalog.addAction(String, String, String)");
-//		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
+		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
 		}
@@ -557,10 +558,10 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with an empty string");
 		}
 
-//		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
-//		System.out.println("    plugin: " + pluginName);
-//		System.out.println("    class: " + className);
-//		System.out.println("    method: " + methodName);
+		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
+		System.out.println("    plugin: " + pluginName);
+		System.out.println("    class: " + className);
+		System.out.println("    method: " + methodName);
 		Object ret = null;
 
 		if (isPluginActive(pluginName)) {
