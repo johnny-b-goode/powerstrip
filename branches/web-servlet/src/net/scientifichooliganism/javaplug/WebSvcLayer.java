@@ -35,6 +35,7 @@ public final class WebSvcLayer extends HttpServlet {
 			String plugin = null;
 			String action = null;
 
+			// TODO: Fix indexes
 			if(pathInfo.length > 1) {
 				plugin = pathInfo[1];
 			}

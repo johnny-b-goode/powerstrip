@@ -18,7 +18,7 @@ import java.util.zip.ZipInputStream;
 * This class does stuff, maybe.
 */
 public class PluginLoader {
-	private static ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+	private static ClassLoader defaultClassLoader = ClassLoader.getSystemClassLoader();
 	/**
 	* The default constructor.
 	*/
@@ -220,13 +220,13 @@ public class PluginLoader {
 					}
 
 //					System.out.println("	attempting to load " + String.valueOf(url));
-					mthd.invoke((systemClassLoader), new Object[]{url});
+					mthd.invoke((defaultClassLoader), new Object[]{url});
 				}
 
 				String thisPath = PluginLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 				URL thisURL = (new File(thisPath)).toURI().toURL();
 
-				mthd.invoke(systemClassLoader, new Object[]{thisURL});
+				mthd.invoke(defaultClassLoader, new Object[]{thisURL});
 			}
 			catch (Exception exc) {
 //				System.out.println("messin' with the classloader failed:");
@@ -244,10 +244,10 @@ public class PluginLoader {
 		bootstrap(null);
 	}
 
-	public static void bootstrap (ClassLoader systemClassLoader) {
+	public static void bootstrap (ClassLoader classLoader) {
 		try {
-			if(systemClassLoader != null){
-				PluginLoader.systemClassLoader = systemClassLoader;
+			if(defaultClassLoader != null){
+				PluginLoader.defaultClassLoader = classLoader;
 			}
 			ActionCatalog ac = loadActionCatalog();
 			//load xml plugin

@@ -3,7 +3,6 @@ package net.scientifichooliganism.javaplug.vo;
 import net.scientifichooliganism.javaplug.interfaces.Action;
 
 public class BaseAction extends BaseValueObject implements Action{
-	private int id;
 	private String name;
 	private String description;
 	private String module;
@@ -13,7 +12,6 @@ public class BaseAction extends BaseValueObject implements Action{
 
 	public BaseAction() {
 		super();
-		id = -1;
 		name = null;
 		description = null;
 		module = null;
