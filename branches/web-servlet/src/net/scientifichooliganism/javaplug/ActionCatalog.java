@@ -1,9 +1,14 @@
 package net.scientifichooliganism.javaplug;
 
+import javafx.util.Pair;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -593,19 +598,19 @@ public final class ActionCatalog {
 				else {
 					methodKey = methodKey + ")";
 				}
-//				System.out.println("	methodKey: " + methodKey);
+				System.out.println("	methodKey: " + methodKey);
 				Object objectInstance = null;
 				Method objectMethod = null;
 
 				if (objects.containsKey(actions[action][1])) {
-//					System.out.println("	found cached object");
+					System.out.println("	found cached object");
 					objectInstance = objects.get(actions[action][1]);
 				}
 				else {
 					//This can be a bit complicated because at this point
 					//I need to know how to instantiate the object.
 					//if there is a public constructor call it
-//					System.out.println("	didn't find a cached object");
+					System.out.println("	didn't find a cached object");
 
 					Class klass = null;
 
@@ -613,7 +618,7 @@ public final class ActionCatalog {
 
 					for (Constructor c : klass.getConstructors()) {
 						if (c.getParameterCount() == 0) {
-//							System.out.println("	found a public constructor...");
+							System.out.println("	found a public constructor...");
 							objectInstance = c.newInstance(null);
 						}
 					}
@@ -622,11 +627,11 @@ public final class ActionCatalog {
 					//a public getInstance method call it
 					//
 					if (objectInstance == null) {
-//						System.out.println("	didn't find a public constructor...");
+						System.out.println("	didn't find a public constructor...");
 						for (Method m : klass.getDeclaredMethods()) {
 //							System.out.println("		evaluating " + m.getName());
 							if ((m.getName().equals("getInstance")) && (m.getParameterCount() == 0) && (Modifier.isStatic(m.getModifiers()))) {
-//								System.out.println("	found a static getInstance method");
+								System.out.println("	found a static getInstance method");
 								objectInstance = m.invoke(null, null);
 								objects.putIfAbsent(actions[action][1], objectInstance);
 							}
@@ -651,7 +656,20 @@ public final class ActionCatalog {
 						}
 					}
 
-					objectMethod = klass.getMethod(actions[action][2], args);
+//					System.out.println("class: " + klass.getName());
+//					for(Method m : klass.getClass().getMethods()){
+//						System.out.println("    " + m.getName());
+//					}
+
+					try {
+						objectMethod = klass.getMethod(actions[action][2], args);
+					}
+					catch (NoSuchMethodException exc){
+						objectMethod = findMethod(klass, actions[action][2], args);
+						if(objectMethod == null){
+							throw exc;
+						}
+					}
 
 					if (objectMethod != null) {
 //						System.out.println("    adding method to cache");
@@ -680,6 +698,129 @@ public final class ActionCatalog {
 
 		return ret;
 	}
+
+	// Method takes a Class, and searches its methods for the most-specific
+	// method that fits a given list of arguments.
+	private Method findMethod(Class klass, String methodName, Class args[]){
+		// Retrieve all methods on class
+		ArrayList<Method> methodList = new ArrayList<Method>(Arrays.asList(klass.getMethods()));
+
+		// Remove any methods that do not match the method name given
+		methodList.removeIf(m -> !(m.getName() == methodName));
+		// Remove any methods that have a different number of parametrs
+		methodList.removeIf(m -> m.getParameterCount() != args.length);
+
+		// Create priority queue that will compare based on Integer size in Pair
+		PriorityQueue<Pair<Method, Integer>> methodQueue = new PriorityQueue<>(
+				methodList.size(),
+				new Comparator<Pair<Method, Integer>>() {
+					@Override
+					public int compare(Pair<Method, Integer> o1, Pair<Method, Integer> o2) {
+						// PriorityQueue<> prioritizes the small value, so we flip logic
+						if(o1.getValue() > o2.getValue()){
+							return -1;
+						} else if(o1.getValue() < o2.getValue()){
+							return 1;
+						} else {
+							return 0;
+						}
+					}
+				}
+		);
+
+		// Populate a priority queue with the number of parameter matches in
+		// method signature as the priority indicator.
+		for(Method m : methodList){
+			// count matching params
+			Class paramTypes[] = m.getParameterTypes();
+			int matches = 0;
+			for(int i = 0; i < paramTypes.length; i++){
+				if(paramTypes[i] == args[i]){
+					matches++;
+				}
+			}
+			methodQueue.add(new Pair<>(m, matches));
+		}
+
+		boolean foundMatch = false;
+		while(!foundMatch && methodQueue.size() > 0){
+			ArrayList<Method> bestPriorityMethods = new ArrayList<>();
+			int highestPriority = methodQueue.peek().getValue();
+
+			// Retrieve set of highest priority methods
+			while(methodQueue.size() > 0 && methodQueue.peek().getValue() == highestPriority){
+				bestPriorityMethods.add(methodQueue.poll().getKey());
+			}
+
+			// Assign each a "score" based on its match-ability
+			for(Method m : bestPriorityMethods){
+				int score = 0;
+				boolean isValid = true;
+				Class paramTypes[] = m.getParameterTypes();
+				for(int i = 0; i < paramTypes.length; i++){
+					// TODO: Adjust scores
+					if(paramTypes[i] == args[i]){
+						score += 4;
+					} else if(checkClassExtends(args[i], paramTypes[i])){
+						score += 3;
+					} else if(paramTypes[i].isInterface() && checkClassImplements(args[i], paramTypes[i])){
+						score += 2;
+					} else {
+						isValid = false;
+					}
+					if(isValid){
+						methodQueue.add(new Pair<>(m, score));
+						foundMatch = true;
+					} else {
+						bestPriorityMethods.remove(m);
+					}
+				}
+			}
+		}
+
+		if(methodQueue.size() > 0){
+			return methodQueue.peek().getKey();
+		} else {
+			return null;
+		}
+	}
+
+	// TODO: return distance
+	private boolean checkClassExtends(Class klass, Class goalClass){
+		if(klass == goalClass){
+			return true;
+		} else if(klass.getSuperclass() != null){
+			return checkClassExtends(klass.getSuperclass(), goalClass);
+		}
+		return false;
+	}
+
+	// TODO: return distance
+	private boolean checkClassImplements(Class klass, Class goalInterface){
+		Class interfaces[] = klass.getInterfaces();
+
+		// Check if immediate interfaces contain the goal interface
+		if(Arrays.asList(interfaces).contains(goalInterface)){
+			return true;
+		}
+		// Check if extention of immediate interfaces contain goal interface
+		else if(interfaces.length > 0){
+			for(Class i : interfaces){
+				if(checkClassImplements(i, goalInterface)){
+					return true;
+				}
+			}
+		}
+		// Check if any super class implements interface
+		else if(klass.getSuperclass() != null){
+			if(checkClassImplements(klass.getSuperclass(), goalInterface)){
+				return true;
+			}
+		}
+		// No interface was implemented, return false
+		return false;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 	/**a bunch of tests, I mean, a main method*/

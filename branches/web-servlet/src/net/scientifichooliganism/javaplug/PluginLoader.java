@@ -246,21 +246,22 @@ public class PluginLoader {
 
 	public static void bootstrap (ClassLoader classLoader) {
 		try {
-			if(defaultClassLoader != null){
+			if(classLoader != null){
 				PluginLoader.defaultClassLoader = classLoader;
 			}
+
 			ActionCatalog ac = loadActionCatalog();
 			//load xml plugin
 			ac.addAction("XMLPlugin", "net.scientifichooliganism.xmlplugin.XMLPlugin", "objectFromNode");
 			ac.setPluginActive("XMLPlugin", true);
 
-			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource");
-			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "query");
+			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource");
+			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "query");
 			ac.setPluginActive("XMLDataStorePlugin", true);
 			ac.setPluginStorage("XMLDataStorePlugin", true);
 
 			for (String plugin : ac.keySet()) {
-				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
+				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
 //			System.out.println("Finished Performing actions!");
 			//Initialize a data directory that is sibling to plugins for the initial default
@@ -270,7 +271,7 @@ public class PluginLoader {
 
 			//ac.findAction("query");
 			//ac.findAction("XMLDataStorePlugin query");
-			//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmlplugin.XMLDataStorePlugin query");
+			//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmldatastore.XMLDataStorePlugin query");
 
 			DataLayer dl = DataLayer.getInstance();
 			//read plugin data from xml
