@@ -5,10 +5,7 @@ import javafx.util.Pair;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -667,7 +664,7 @@ public final class ActionCatalog {
 					catch (NoSuchMethodException exc){
 						objectMethod = findMethod(klass, actions[action][2], args);
 						if(objectMethod == null){
-							throw exc;
+							throw new NoSuchMethodException("Could not find method " + actions[action][2] + " in class " + klass.getName());
 						}
 					}
 
@@ -742,7 +739,10 @@ public final class ActionCatalog {
 			methodQueue.add(new Pair<>(m, matches));
 		}
 
+		// Indicates a method has been found where the types match
 		boolean foundMatch = false;
+		Method bestMatch = null;
+		int bestScore = -1;
 		while(!foundMatch && methodQueue.size() > 0){
 			ArrayList<Method> bestPriorityMethods = new ArrayList<>();
 			int highestPriority = methodQueue.peek().getValue();
@@ -758,67 +758,72 @@ public final class ActionCatalog {
 				boolean isValid = true;
 				Class paramTypes[] = m.getParameterTypes();
 				for(int i = 0; i < paramTypes.length; i++){
-					// TODO: Adjust scores
-					if(paramTypes[i] == args[i]){
-						score += 4;
-					} else if(checkClassExtends(args[i], paramTypes[i])){
-						score += 3;
-					} else if(paramTypes[i].isInterface() && checkClassImplements(args[i], paramTypes[i])){
-						score += 2;
-					} else {
+					int distance = getDistance(args[i], paramTypes[i]);
+
+					// If distance is less then zero, we have a class mis-match
+					// cannot use the provided method
+					if(distance < 0){
 						isValid = false;
-					}
-					if(isValid){
-						methodQueue.add(new Pair<>(m, score));
-						foundMatch = true;
 					} else {
-						bestPriorityMethods.remove(m);
+						// The score of a function will be the sum of its
+						// parameters' distances
+						score += distance;
 					}
 				}
-			}
-		}
 
-		if(methodQueue.size() > 0){
-			return methodQueue.peek().getKey();
-		} else {
-			return null;
-		}
-	}
-
-	// TODO: return distance
-	private boolean checkClassExtends(Class klass, Class goalClass){
-		if(klass == goalClass){
-			return true;
-		} else if(klass.getSuperclass() != null){
-			return checkClassExtends(klass.getSuperclass(), goalClass);
-		}
-		return false;
-	}
-
-	// TODO: return distance
-	private boolean checkClassImplements(Class klass, Class goalInterface){
-		Class interfaces[] = klass.getInterfaces();
-
-		// Check if immediate interfaces contain the goal interface
-		if(Arrays.asList(interfaces).contains(goalInterface)){
-			return true;
-		}
-		// Check if extention of immediate interfaces contain goal interface
-		else if(interfaces.length > 0){
-			for(Class i : interfaces){
-				if(checkClassImplements(i, goalInterface)){
-					return true;
+				if(isValid){
+					if(bestMatch == null || score < bestScore){
+						bestMatch = m;
+						bestScore = score;
+					}
+					foundMatch = true;
+				} else {
+					bestPriorityMethods.remove(m);
 				}
 			}
 		}
-		// Check if any super class implements interface
-		else if(klass.getSuperclass() != null){
-			if(checkClassImplements(klass.getSuperclass(), goalInterface)){
-				return true;
+
+		return bestMatch;
+	}
+
+	private int getDistance(Class klass, Class target){
+		ArrayDeque<Class> searchQueue = new ArrayDeque<>();
+		ArrayDeque<Integer> distanceQueue = new ArrayDeque<>();
+		searchQueue.push(klass);
+		distanceQueue.push(0);
+		boolean found = false;
+		while(!found && !searchQueue.isEmpty()){
+			Class nextClass = searchQueue.poll();
+			int distance = distanceQueue.poll();
+			if(nextClass == target){
+				found = true;
+				if(nextClass.isInterface()){
+					return distance;
+				} else {
+					// Super classes are considered "closer" than interfaces.
+					// This is a tie-breaking mechanism between super classes
+					// and interfaces at the same level.
+					// However we do not want negative distances
+					if(distance > 0){
+						distance--;
+					}
+
+					return distance;
+				}
+			} else {
+				if(nextClass.getSuperclass() != null){
+					searchQueue.push(nextClass.getSuperclass());
+					distanceQueue.push(distance + 2);
+				}
+				for(Class i : nextClass.getInterfaces()){
+					searchQueue.push(i);
+					distanceQueue.push(distance + 2);
+				}
 			}
 		}
-		// No interface was implemented, return false
-		return false;
+
+		// No matching class found
+		return -1;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////
