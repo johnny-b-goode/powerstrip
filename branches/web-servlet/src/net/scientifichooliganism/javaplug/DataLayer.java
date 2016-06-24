@@ -1,6 +1,7 @@
 package net.scientifichooliganism.javaplug;
 
 import net.scientifichooliganism.javaplug.interfaces.ValueObject;
+import net.scientifichooliganism.javaplug.util.Logger;
 
 import java.util.Collection;
 import java.util.Vector;
@@ -35,6 +36,7 @@ public final class DataLayer {
 			DataLayer dl = DataLayer.getInstance();
 		}
 		catch (Exception exc) {
+			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
@@ -102,6 +104,7 @@ public final class DataLayer {
 					}
 				}
 			} catch(Exception exc){
+				Logger.log(exc.getMessage());
 				exc.printStackTrace();
 			}
 		}

@@ -1,6 +1,7 @@
 package net.scientifichooliganism.javaplug;
 
 import javafx.util.Pair;
+import net.scientifichooliganism.javaplug.util.Logger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -45,6 +46,7 @@ public final class ActionCatalog {
 			methods = new ConcurrentHashMap<String, Method>();
 		}
 		catch (Exception exc) {
+			Logger.error(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
@@ -61,7 +63,7 @@ public final class ActionCatalog {
 
 	/**add a plugin*/
 	public void addPlugin (String pluginName, String pluginPath) throws IllegalArgumentException {
-		System.out.println("Adding plugin: " + pluginName + " with path: " + pluginPath);
+//		System.out.println("Adding plugin: " + pluginName + " with path: " + pluginPath);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addPlugin (String, String) was called with a null string");
 		}
@@ -86,6 +88,7 @@ public final class ActionCatalog {
 			plugins.putIfAbsent(pluginName, pluginPath);
 		}
 		catch (Exception exc) {
+			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
@@ -93,7 +96,7 @@ public final class ActionCatalog {
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
 //		System.out.println("ActionCatalog.addAction(String, String, String)");
-		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
+//		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
 		}
@@ -166,7 +169,7 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("findAction(String) was called with an empty string");
 		}
 
-		System.out.println("ActionCatalog.findAction(String, String)");
+//		System.out.println("ActionCatalog.findAction(String, String)");
 		query = query.trim();
 		String ret[] = null;
 		String queryMethod = null;
@@ -560,10 +563,10 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with an empty string");
 		}
 
-		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
-		System.out.println("    plugin: " + pluginName);
-		System.out.println("    class: " + className);
-		System.out.println("    method: " + methodName);
+//		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
+//		System.out.println("    plugin: " + pluginName);
+//		System.out.println("    class: " + className);
+//		System.out.println("    method: " + methodName);
 		Object ret = null;
 
 		if (isPluginActive(pluginName)) {
@@ -595,19 +598,19 @@ public final class ActionCatalog {
 				else {
 					methodKey = methodKey + ")";
 				}
-				System.out.println("	methodKey: " + methodKey);
+//				System.out.println("	methodKey: " + methodKey);
 				Object objectInstance = null;
 				Method objectMethod = null;
 
 				if (objects.containsKey(actions[action][1])) {
-					System.out.println("	found cached object");
+//					System.out.println("	found cached object");
 					objectInstance = objects.get(actions[action][1]);
 				}
 				else {
 					//This can be a bit complicated because at this point
 					//I need to know how to instantiate the object.
 					//if there is a public constructor call it
-					System.out.println("	didn't find a cached object");
+//					System.out.println("	didn't find a cached object");
 
 					Class klass = null;
 
@@ -615,7 +618,7 @@ public final class ActionCatalog {
 
 					for (Constructor c : klass.getConstructors()) {
 						if (c.getParameterCount() == 0) {
-							System.out.println("	found a public constructor...");
+//							System.out.println("	found a public constructor...");
 							objectInstance = c.newInstance(null);
 						}
 					}
@@ -624,11 +627,11 @@ public final class ActionCatalog {
 					//a public getInstance method call it
 					//
 					if (objectInstance == null) {
-						System.out.println("	didn't find a public constructor...");
+//						System.out.println("	didn't find a public constructor...");
 						for (Method m : klass.getDeclaredMethods()) {
 //							System.out.println("		evaluating " + m.getName());
 							if ((m.getName().equals("getInstance")) && (m.getParameterCount() == 0) && (Modifier.isStatic(m.getModifiers()))) {
-								System.out.println("	found a static getInstance method");
+//								System.out.println("	found a static getInstance method");
 								objectInstance = m.invoke(null, null);
 								objects.putIfAbsent(actions[action][1], objectInstance);
 							}
@@ -662,8 +665,10 @@ public final class ActionCatalog {
 						objectMethod = klass.getMethod(actions[action][2], args);
 					}
 					catch (NoSuchMethodException exc){
+						Logger.info(exc.getMessage());
 						objectMethod = findMethod(klass, actions[action][2], args);
 						if(objectMethod == null){
+							Logger.error(exc.getMessage());
 							throw new NoSuchMethodException("Could not find method " + actions[action][2] + " in class " + klass.getName());
 						}
 					}
@@ -689,6 +694,7 @@ public final class ActionCatalog {
 				}
 			}
 			catch (Exception exc) {
+				Logger.log(exc.getMessage());
 				exc.printStackTrace();
 			}
 		}
@@ -724,6 +730,8 @@ public final class ActionCatalog {
 					}
 				}
 		);
+
+		// TODO: explain priority of selection
 
 		// Populate a priority queue with the number of parameter matches in
 		// method signature as the priority indicator.
@@ -858,6 +866,7 @@ public final class ActionCatalog {
 			ac.removePlugin("HelloWorldPugin2");
 		}
 		catch (Exception exc) {
+			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
