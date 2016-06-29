@@ -44,11 +44,24 @@ public final class DataLayer {
 			action.setMethod("New method");
 			action.setURL("google.com");
 
+			action.setModule("Module");
+			action.setID(42);
+			action.setDescription("description");
+			action.setKlass("action");
+
 			dl.persist(action);
+
+			Collection actions = dl.query("SELECT action FROM data");
+
+			Action changeAction = (Action)actions.iterator().next();
+			changeAction.setName("NEW NAME!!");
+			dl.persist(changeAction);
+
+			int dummy = 0;
 
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
+//			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
@@ -275,5 +288,6 @@ public final class DataLayer {
 		}
 
 		defaultStore = in;
+		stores.add(in);
 	}
 }

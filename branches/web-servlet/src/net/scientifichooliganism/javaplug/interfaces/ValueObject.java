@@ -2,7 +2,7 @@ package net.scientifichooliganism.javaplug.interfaces;
 
 public interface ValueObject {
     int getID();
-    void setID(int in) throws IllegalArgumentException, RuntimeException;
+    void setID(int in);
     String getLabel();
-    void setLabel(String in) throws IllegalArgumentException;
+    void setLabel(String in);
 }

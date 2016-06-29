@@ -2,15 +2,15 @@ package net.scientifichooliganism.javaplug.interfaces;
 
 public interface Action extends ValueObject{
     String getName();
-    void setName(String in) throws IllegalArgumentException;
+    void setName(String in);
     String getDescription();
-    void setDescription(String in) throws IllegalArgumentException;
+    void setDescription(String in);
     String getModule();
-    void setModule(String in) throws IllegalArgumentException;
+    void setModule(String in);
     String getKlass();
-    void setKlass(String in) throws IllegalArgumentException;
+    void setKlass(String in);
     String getURL();
-    void setURL(String in) throws IllegalArgumentException;
+    void setURL(String in);
     String getMethod();
-    void setMethod(String in) throws IllegalArgumentException;
+    void setMethod(String in);
 }
