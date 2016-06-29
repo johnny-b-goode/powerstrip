@@ -1,7 +1,9 @@
 package net.scientifichooliganism.javaplug;
 
+import net.scientifichooliganism.javaplug.interfaces.Action;
 import net.scientifichooliganism.javaplug.interfaces.ValueObject;
 import net.scientifichooliganism.javaplug.util.Logger;
+import net.scientifichooliganism.javaplug.vo.BaseAction;
 
 import java.util.Collection;
 import java.util.Vector;
@@ -33,7 +35,17 @@ public final class DataLayer {
 	/**a bunch of tests, I mean, a main method*/
 	public static void main (String [] args) {
 		try {
+			PluginLoader.bootstrap();
 			DataLayer dl = DataLayer.getInstance();
+			dl.setDefaultStore("XMLDataStorePlugin");
+
+			Action action = new BaseAction();
+			action.setName("My Action Name");
+			action.setMethod("New method");
+			action.setURL("google.com");
+
+			dl.persist(action);
+
 		}
 		catch (Exception exc) {
 			Logger.log(exc.getMessage());
@@ -170,6 +182,22 @@ public final class DataLayer {
 
 		//deconstruct the label to determine where to persist an object
 		//	this is where the default data store comes into play - new objects go here
+
+		ValueObject vo = (ValueObject)obj;
+		if(vo.getLabel() == null || vo.getLabel().isEmpty()){
+			persist(defaultStore, obj);
+		} else {
+			// Assume store is first part of label
+			String store = vo.getLabel().split("\\|")[0];
+
+			if(!stores.contains(store)){
+				throw new RuntimeException("persist(Object) was called on an object whose store does not exist");
+			}
+
+			// Clear off plugin part of label, will rebuild on way back out of storage location
+			vo.setLabel(vo.getLabel().replace(store + "|", ""));
+			persist(store, obj);
+		}
 	}
 
 	public void persist (String store, Object obj) throws IllegalArgumentException {
@@ -185,7 +213,9 @@ public final class DataLayer {
 			throw new IllegalArgumentException("persist(String, Object) was called with a null object");
 		}
 
-		//
+		ActionCatalog ac = ActionCatalog.getInstance();
+		String action[] = ac.findAction(store + " persist");
+		ac.performAction(action[0], action[1], action[2], new Object[]{obj});
 	}
 
 	public void addStore (String store) throws IllegalArgumentException {

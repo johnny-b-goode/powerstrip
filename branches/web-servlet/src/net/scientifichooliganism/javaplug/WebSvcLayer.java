@@ -26,8 +26,15 @@ public final class WebSvcLayer extends HttpServlet {
 	@Override
 	public void doGet (HttpServletRequest request, HttpServletResponse response) throws
 		ServletException, IOException {
-		response.setContentType("text/plain");
 		PrintWriter pwResponse = response.getWriter();
+		String contentType = null;
+
+		if(request.getHeader("Accept") != null){
+			contentType = request.getHeader("Accept");
+			response.setContentType(contentType);
+			System.out.println("Response type is " + contentType);
+		}
+
 
 		try {
 			response.setStatus(HttpServletResponse.SC_OK);
@@ -35,29 +42,58 @@ public final class WebSvcLayer extends HttpServlet {
 			String plugin = null;
 			String action = null;
 
-			// TODO: Fix indexes
-			if(pathInfo.length > 1) {
-				plugin = pathInfo[1];
-			}
 			if(pathInfo.length > 2) {
-				action = pathInfo[2];
+				plugin = pathInfo[pathInfo.length - 2];
+				action = pathInfo[pathInfo.length - 1];
 			}
 
-			pwResponse.println("request.getPathInfo(): " + request.getPathInfo());
-			pwResponse.println("context path: " + request.getContextPath());
-			pwResponse.println("plugin: " + plugin);
-			pwResponse.println("action: " + action);
+			if(plugin == null || action == null){
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Either Plugin or Action not specified in URL.");
+			}
+
+			System.out.println("request.getPathInfo(): " + request.getPathInfo());
+			System.out.println("context path: " + request.getContextPath());
+			System.out.println("plugin: " + plugin);
+			System.out.println("action: " + action);
 
 			Map parameters = request.getParameterMap();
 
-			if ((parameters != null) && (parameters.size() > 0)) {
-				pwResponse.println(parameters.keySet());
-				for (Object obj : parameters.keySet()) {
-					pwResponse.println(obj + ": " + ((String[])parameters.get(obj))[0]);
+//			if ((parameters != null) && (parameters.size() > 0)) {
+//				System.out.println(parameters.keySet());
+//				for (Object obj : parameters.keySet()) {
+//					System.out.println(obj + ": " + ((String[])parameters.get(obj))[0]);
+//				}
+//			}
+
+			if(plugin.toLowerCase().equals("data")){
+				Object result = null;
+				switch(action.toLowerCase()){
+					case "query":
+						if(parameters.containsKey("query")) {
+							String query = ((String[]) parameters.get("query"))[0];
+							result = DataLayer.getInstance().query(actionCatalog, query);
+						} else {
+							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
+						}
+						break;
+					default:
+						response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for " + plugin + ".");
+						break;
+				}
+
+				switch(contentType){
+					case "application/json":
+						String json = (String)actionCatalog.performAction("JSONPlugin",
+							"net.scientifichooliganism.jsonplugin.JSONPlugin",
+							"jsonFromObject", new Object[]{result});
+						pwResponse.println(json);
+						break;
+					default:
+						response.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "Content type requested is not supported");
+						break;
 				}
 			}
 
-			actionCatalog.performAction(plugin, actionCatalog.plugins.get(plugin), action, new Object[]{"My Message!"});
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
@@ -65,4 +101,6 @@ public final class WebSvcLayer extends HttpServlet {
 			pwResponse.println("ERROR");
 		}
 	}
+
+
 }

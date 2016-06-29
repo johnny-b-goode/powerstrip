@@ -535,6 +535,12 @@ public final class ActionCatalog {
 
 	/*I don't need to know the return type because it's not part of the method signature*/
 	public Object performAction(String pluginName, String className, String methodName, Object[] arguments) throws IllegalArgumentException {
+
+		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
+		System.out.println("    plugin: " + pluginName);
+		System.out.println("    class: " + className);
+		System.out.println("    method: " + methodName);
+
 		if (pluginName == null) {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with a null string");
 		}
@@ -563,10 +569,6 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with an empty string");
 		}
 
-//		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
-//		System.out.println("    plugin: " + pluginName);
-//		System.out.println("    class: " + className);
-//		System.out.println("    method: " + methodName);
 		Object ret = null;
 
 		if (isPluginActive(pluginName)) {
@@ -668,7 +670,7 @@ public final class ActionCatalog {
 						Logger.info(exc.getMessage());
 						objectMethod = findMethod(klass, actions[action][2], args);
 						if(objectMethod == null){
-							Logger.error(exc.getMessage());
+//							Logger.error(exc.getMessage());
 							throw new NoSuchMethodException("Could not find method " + actions[action][2] + " in class " + klass.getName());
 						}
 					}
@@ -694,7 +696,7 @@ public final class ActionCatalog {
 				}
 			}
 			catch (Exception exc) {
-				Logger.log(exc.getMessage());
+//				Logger.log(exc.getMessage());
 				exc.printStackTrace();
 			}
 		}
@@ -709,7 +711,7 @@ public final class ActionCatalog {
 		ArrayList<Method> methodList = new ArrayList<Method>(Arrays.asList(klass.getMethods()));
 
 		// Remove any methods that do not match the method name given
-		methodList.removeIf(m -> !(m.getName() == methodName));
+		methodList.removeIf(m -> !(m.getName().equals(methodName)));
 		// Remove any methods that have a different number of parametrs
 		methodList.removeIf(m -> m.getParameterCount() != args.length);
 
@@ -731,7 +733,14 @@ public final class ActionCatalog {
 				}
 		);
 
-		// TODO: explain priority of selection
+		// The priority used for method selection is as follows
+		// Methods with the most number of specific type matches are prioritized first
+		//     When two methods have the same number of specific type matches, this tie is broken by
+		//     determining which requested argument has the closest relation to a type in
+		//     the argument list of the reflected method
+		//	       If both and interface and a super class are found to have the same relation, the
+		//         algorithm chooses the super type over the interface
+		// This is the currently implemented solution
 
 		// Populate a priority queue with the number of parameter matches in
 		// method signature as the priority indicator.
@@ -761,12 +770,13 @@ public final class ActionCatalog {
 			}
 
 			// Assign each a "score" based on its match-ability
-			for(Method m : bestPriorityMethods){
+			for(int i = 0; i < bestPriorityMethods.size(); i++){
+				Method m = bestPriorityMethods.get(i);
 				int score = 0;
 				boolean isValid = true;
 				Class paramTypes[] = m.getParameterTypes();
-				for(int i = 0; i < paramTypes.length; i++){
-					int distance = getDistance(args[i], paramTypes[i]);
+				for(int j = 0; j < paramTypes.length; j++){
+					int distance = getDistance(args[j], paramTypes[j]);
 
 					// If distance is less then zero, we have a class mis-match
 					// cannot use the provided method
@@ -786,7 +796,7 @@ public final class ActionCatalog {
 					}
 					foundMatch = true;
 				} else {
-					bestPriorityMethods.remove(m);
+					bestPriorityMethods.remove(i);
 				}
 			}
 		}

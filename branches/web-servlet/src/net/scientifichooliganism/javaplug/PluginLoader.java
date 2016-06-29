@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collection;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
@@ -364,7 +365,12 @@ public class PluginLoader {
 		}
 	}
 
-	public static void main(String [] args){
+	public static void main(String args[]){
 		bootstrap();
+		Collection<Configuration> configs = DataLayer.getInstance().query(ActionCatalog.getInstance(), "SELECT config FROM plugin");
+
+		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",
+					"net.scientifichooliganism.jsonplugin.JSONPlugin",
+					"jsonFromObject", new Object[]{configs});
 	}
 }
