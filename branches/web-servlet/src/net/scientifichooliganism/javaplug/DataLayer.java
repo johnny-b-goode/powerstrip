@@ -1,27 +1,39 @@
 package net.scientifichooliganism.javaplug;
 
 import net.scientifichooliganism.javaplug.interfaces.Action;
+import net.scientifichooliganism.javaplug.interfaces.Configuration;
 import net.scientifichooliganism.javaplug.interfaces.ValueObject;
 import net.scientifichooliganism.javaplug.util.Logger;
 import net.scientifichooliganism.javaplug.vo.BaseAction;
+import net.scientifichooliganism.javaplug.vo.BaseConfiguration;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class DataLayer {
 	private String defaultStore;
 	private static DataLayer instance;
 	private Vector<String> stores;
-	private ConcurrentHashMap<String, Integer> ids;
+	private BigInteger currentId;
+	Configuration currentIdConfig;
 
 	/**
 	* The default constructor.
 	*/
 	private DataLayer() {
 		stores = new Vector();
-		ids = new ConcurrentHashMap<String, Integer>();
 		defaultStore = null;
+
+		currentIdConfig = (Configuration)query("SELECT configuration FROM data");
+		if(currentIdConfig == null) {
+			currentIdConfig = new BaseConfiguration();
+			currentIdConfig.setKey("current_id");
+			currentIdConfig.setValue("0");
+		}
+		currentId = new BigInteger(currentIdConfig.getValue());
+
+
 	}
 
 	public static DataLayer getInstance () {
@@ -45,7 +57,6 @@ public final class DataLayer {
 			action.setURL("google.com");
 
 			action.setModule("Module");
-			action.setID(42);
 			action.setDescription("description");
 			action.setKlass("action");
 
@@ -56,15 +67,22 @@ public final class DataLayer {
 			Action changeAction = (Action)actions.iterator().next();
 			changeAction.setName("NEW NAME!!");
 			dl.persist(changeAction);
-
-			int dummy = 0;
-
 		}
 		catch (Exception exc) {
 //			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
+
+	public String getUniqueID(){
+		String newId = currentId.toString();
+		currentId.add(BigInteger.ONE);
+		currentIdConfig.setValue(currentId.toString());
+		persist(currentIdConfig);
+		return newId;
+	}
+
+
 
 	/*I need to figure out a proper solution for this because I really do not think I should be implementing
 	my own query language or a parser for it. HOWEVER, whatever solution is used needs to be able to function

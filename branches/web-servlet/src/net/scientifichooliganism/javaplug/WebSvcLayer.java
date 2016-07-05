@@ -1,5 +1,7 @@
 package net.scientifichooliganism.javaplug;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -76,20 +78,24 @@ public final class WebSvcLayer extends HttpServlet {
 							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
 						}
 						break;
+					case "persist":
+						throw new NotImplementedException();
+						// break;
+					case "remove":
+						break;
 					default:
 						response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for " + plugin + ".");
 						break;
 				}
 
 				switch(contentType){
+					case "text/json":
 					case "application/json":
+					default:
 						String json = (String)actionCatalog.performAction("JSONPlugin",
 							"net.scientifichooliganism.jsonplugin.JSONPlugin",
 							"jsonFromObject", new Object[]{result});
 						pwResponse.println(json);
-						break;
-					default:
-						response.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "Content type requested is not supported");
 						break;
 				}
 			}
