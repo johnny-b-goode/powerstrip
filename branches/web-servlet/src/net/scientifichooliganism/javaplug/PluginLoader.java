@@ -176,7 +176,7 @@ public class PluginLoader {
 //				System.out.println("		key: " + key + ", value: " + String.valueOf(plugins.get(key)));
 				File pluginFile = new File(plugins.get(key));
 
-				if (pluginFile.isFile()) {
+				if (pluginFile.isFile()){
 					//then it is an archive, extract it
 					try {
 						String strKeyTemp = key.substring(0, key.lastIndexOf("."));
@@ -274,6 +274,9 @@ public class PluginLoader {
 			for (String plugin : ac.keySet()) {
 				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"data/config.xml"});
+
+
 //			System.out.println("Finished Performing actions!");
 			//Initialize a data directory that is sibling to plugins for the initial default
 
@@ -285,6 +288,7 @@ public class PluginLoader {
 			//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmldatastore.XMLDataStorePlugin query");
 
 			DataLayer dl = DataLayer.getInstance();
+
 			//read plugin data from xml
 			Vector<Action> actions = (Vector<Action>)dl.query(ac, "SELECT action FROM plugin");
 			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "SELECT config FROM plugin");
@@ -329,6 +333,7 @@ public class PluginLoader {
 					}
 
 					//this is done in a second pass to ensure the plugins have been activated so that the proper action can be called.
+					// Additionally, configuration data is populated into Core at this point for each plugin
 					for (Configuration conf : configs) {
 						if ((! conf.getKey().toLowerCase().trim().equals("active")) && (! conf.getKey().toLowerCase().trim().equals("storage"))) {
 							try {
@@ -356,6 +361,9 @@ public class PluginLoader {
 							}
 						}
 					}
+
+
+
 				}
 			}
 		}

@@ -371,13 +371,13 @@ public final class ActionCatalog {
 		}
 
 		if (classFound == false) {
-			if (objects.contains(className)) {
+			if (objects.containsKey(className)) {
 				objects.remove(className);
 			}
 		}
 
 		if (methodFound == false) {
-			if (methods.contains(methodName)) {
+			if (methods.containsKey(methodName)) {
 				methods.remove(methodName);
 			}
 		}

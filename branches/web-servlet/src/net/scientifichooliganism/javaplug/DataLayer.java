@@ -12,28 +12,20 @@ import java.util.Collection;
 import java.util.Vector;
 
 public final class DataLayer {
-	private String defaultStore;
 	private static DataLayer instance;
 	private Vector<String> stores;
-	private BigInteger currentId;
-	Configuration currentIdConfig;
+	private Configuration lastId = null;
+	private Configuration shutdownStatus = null;
+	private int sequenceCount = 0;
+	private int sequenceReset = -1;
+	private String defaultStore;
 
 	/**
 	* The default constructor.
 	*/
 	private DataLayer() {
-		stores = new Vector();
+		stores = new Vector<>();
 		defaultStore = null;
-
-		currentIdConfig = (Configuration)query("SELECT configuration FROM data");
-		if(currentIdConfig == null) {
-			currentIdConfig = new BaseConfiguration();
-			currentIdConfig.setKey("current_id");
-			currentIdConfig.setValue("0");
-		}
-		currentId = new BigInteger(currentIdConfig.getValue());
-
-
 	}
 
 	public static DataLayer getInstance () {
@@ -44,12 +36,25 @@ public final class DataLayer {
 		return instance;
 	}
 
+	private String getDefaultStore(){
+		if(defaultStore == null) {
+			Vector<Configuration> configs = (Vector<Configuration>) query("SELECT config FROM data");
+			for (Configuration config : configs) {
+				if (config.getKey().equals("default_store")) {
+					defaultStore = config.getValue();
+					addStore(config.getValue());
+				}
+			}
+		}
+
+		return defaultStore;
+	}
+
 	/**a bunch of tests, I mean, a main method*/
 	public static void main (String [] args) {
 		try {
 			PluginLoader.bootstrap();
 			DataLayer dl = DataLayer.getInstance();
-			dl.setDefaultStore("XMLDataStorePlugin");
 
 			Action action = new BaseAction();
 			action.setName("My Action Name");
@@ -75,10 +80,56 @@ public final class DataLayer {
 	}
 
 	public String getUniqueID(){
-		String newId = currentId.toString();
-		currentId.add(BigInteger.ONE);
-		currentIdConfig.setValue(currentId.toString());
-		persist(currentIdConfig);
+		if (lastId == null || sequenceReset == -1 || shutdownStatus == null){
+			Vector<Configuration> configs = (Vector<Configuration>)query("SELECT config FROM data");
+			boolean dirtyStartup = false;
+			for(Configuration config : configs){
+				if(config.getKey().equals("lastID")) {
+					lastId = config;
+				} else if(config.getKey().equals("sequence_length")){
+					sequenceReset = Integer.parseInt(config.getValue());
+				} else if(config.getKey().equals("shutdown_state")){
+					shutdownStatus = config;
+					if(config.getValue().equals("dirty")){
+						dirtyStartup = true;
+					} else {
+						dirtyStartup = false;
+					}
+				}
+				// Set defaults if nothing was initialized from xml
+				if(lastId == null){
+					lastId = new BaseConfiguration();
+					lastId.setKey("lastID");
+					lastId.setValue("0");
+				}
+
+				if(sequenceReset == -1){
+					sequenceReset = 5;
+				}
+
+				if(shutdownStatus == null){
+					shutdownStatus = new BaseConfiguration();
+					shutdownStatus.setKey("shutdown_state");
+					shutdownStatus.setValue("dirty");
+				}
+			}
+			if(dirtyStartup){
+				lastId.setValue(new BigInteger(lastId.getValue()).add(new BigInteger(String.valueOf(sequenceReset))).toString());
+			}
+		}
+		String newId = (new BigInteger(lastId.getValue())).add(BigInteger.ONE).toString();
+		lastId.setValue(newId);
+		if(sequenceCount == 0) {
+			sequenceCount = sequenceReset;
+			shutdownStatus.setValue("clean");
+			persist(lastId);
+			persist(shutdownStatus);
+		} else if(sequenceCount == sequenceReset) {
+			shutdownStatus.setValue("dirty");
+			persist(shutdownStatus);
+		} else {
+			sequenceCount--;
+		}
 		return newId;
 	}
 
@@ -216,7 +267,7 @@ public final class DataLayer {
 
 		ValueObject vo = (ValueObject)obj;
 		if(vo.getLabel() == null || vo.getLabel().isEmpty()){
-			persist(defaultStore, obj);
+			persist(getDefaultStore(), obj);
 		} else {
 			// Assume store is first part of label
 			String store = vo.getLabel().split("\\|")[0];
@@ -290,22 +341,5 @@ public final class DataLayer {
 		if (stores.contains(store)) {
 			stores.remove(store);
 		}
-	}
-
-	public String getDefaultStore () {
-		return defaultStore;
-	}
-
-	public void setDefaultStore (String in) throws IllegalArgumentException {
-		if (in == null) {
-			throw new IllegalArgumentException("setDefaultStore(String) was called with a null string");
-		}
-
-		if (in.length() <= 0) {
-			throw new IllegalArgumentException("setDefaultStore(String) was called with an empty string");
-		}
-
-		defaultStore = in;
-		stores.add(in);
 	}
 }
