@@ -91,6 +91,7 @@ public class PluginLoader {
 
 					item = zipIn.getNextEntry();
 				}
+
 			}
 			catch (ZipException zxc) {
 				Logger.log(zxc.getMessage());
@@ -111,6 +112,7 @@ public class PluginLoader {
 			}
 
 			pluginArchive.delete();
+			loadDependencies(pluginDirectory);
 		}
 		catch (Exception exc) {
 			Logger.log(exc.getMessage());
@@ -249,6 +251,26 @@ public class PluginLoader {
 		}
 
 		return ac;
+	}
+
+	private static void loadDependencies(String folderPath){
+		loadDependencies(new File(folderPath));
+	}
+
+	private static void loadDependencies(File file){
+		if(file.isFile() && file.getName().endsWith(".jar")){
+			try {
+				Method addUrlMethod = (URLClassLoader.class).getDeclaredMethod("addURL", new Class[]{URL.class});
+				addUrlMethod.setAccessible(true);
+				addUrlMethod.invoke(defaultClassLoader, new Object[]{file.toURI().toURL()});
+			} catch (Exception exc){
+				exc.printStackTrace();
+			}
+		} else if(file.isDirectory()){
+			for(File item : file.listFiles()){
+				loadDependencies(file);
+			}
+		}
 	}
 
 	public static void bootstrap() {
