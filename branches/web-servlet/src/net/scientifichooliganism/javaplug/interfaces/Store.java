@@ -12,4 +12,5 @@ public interface Store {
 	public void removeResource (Object resource) throws IllegalArgumentException;
 	public void persist (Object in) throws IllegalArgumentException;
 	public Collection query (String query) throws IllegalArgumentException;
+
 }

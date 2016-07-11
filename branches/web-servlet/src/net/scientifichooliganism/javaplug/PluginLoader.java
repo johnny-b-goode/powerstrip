@@ -112,7 +112,7 @@ public class PluginLoader {
 			}
 
 			pluginArchive.delete();
-			loadDependencies(pluginDirectory);
+			loadLibraries(pluginDirectory);
 		}
 		catch (Exception exc) {
 			Logger.log(exc.getMessage());
@@ -253,11 +253,11 @@ public class PluginLoader {
 		return ac;
 	}
 
-	private static void loadDependencies(String folderPath){
-		loadDependencies(new File(folderPath));
+	private static void loadLibraries(String folderPath){
+		loadLibraries(new File(folderPath));
 	}
 
-	private static void loadDependencies(File file){
+	private static void loadLibraries(File file){
 		if(file.isFile() && file.getName().endsWith(".jar")){
 			try {
 				Method addUrlMethod = (URLClassLoader.class).getDeclaredMethod("addURL", new Class[]{URL.class});
@@ -268,7 +268,7 @@ public class PluginLoader {
 			}
 		} else if(file.isDirectory()){
 			for(File item : file.listFiles()){
-				loadDependencies(file);
+				loadLibraries(file);
 			}
 		}
 	}

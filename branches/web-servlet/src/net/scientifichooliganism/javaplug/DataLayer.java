@@ -119,6 +119,8 @@ public final class DataLayer {
 		}
 		String newId = (new BigInteger(lastId.getValue())).add(BigInteger.ONE).toString();
 		lastId.setValue(newId);
+
+		// TODO: Assume dirty
 		if(sequenceCount == 0) {
 			sequenceCount = sequenceReset;
 			shutdownStatus.setValue("clean");
