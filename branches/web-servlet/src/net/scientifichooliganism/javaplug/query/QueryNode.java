@@ -60,6 +60,15 @@ public class QueryNode {
         return QueryOperator.isOperator(value);
     }
 
+    public boolean isProperty(){
+        return value.matches("[\\w.]+");
+    }
+
+    public boolean isLiteral(){
+        return value.startsWith("\"") && value.endsWith("\"")
+            || value.startsWith("\'") && value.endsWith("\'");
+    }
+
     public void consolePrint(){
         consolePrint(0);
     }

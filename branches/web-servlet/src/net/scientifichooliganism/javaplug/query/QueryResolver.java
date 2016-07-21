@@ -56,8 +56,8 @@ public class QueryResolver {
             Query temp = resolver.resolve(testStrings[i]);
 
             System.out.println("Prefix: ");
-            for(int j = 0; temp.getPrefixQuery() != null && j < temp.getPrefixQuery().length; j++){
-                System.out.print(temp.getPrefixQuery()[j] + " ");
+            for(int j = 0; temp.getWherePrefix() != null && j < temp.getWherePrefix().length; j++){
+                System.out.print(temp.getWherePrefix()[j] + " ");
             }
             System.out.println();
 
@@ -126,7 +126,7 @@ public class QueryResolver {
             System.out.println();
             System.out.println("Where String: " + whereString);
             String prefix[] = infixToPrefix(expressionParts);
-            ret.setPrefixQuery(prefix);
+            ret.setWherePrefix(prefix);
         }
 
         return ret;

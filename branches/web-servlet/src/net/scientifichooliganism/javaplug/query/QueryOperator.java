@@ -22,6 +22,7 @@ public enum QueryOperator {
         this("No operator");
     }
 
+    // TODO: Switch highest precedence
     private QueryOperator(String value){
         name = value;
         switch(name){
@@ -51,6 +52,31 @@ public enum QueryOperator {
             default:
                 precedence = 0;
                 break;
+        }
+    }
+
+    public <T> boolean evaluate(T object1, T object2){
+        switch(this){
+            case NOT:
+                return !((Boolean) object1);
+            case AND:
+                return (Boolean) object1 && (Boolean) object2;
+            case OR:
+                return (Boolean) object1 || (Boolean) object2;
+            case EQUAL:
+                return object1.equals(object2);
+            case NOT_EQUAL:
+                return !(object1.equals(object2));
+            case GREATER_THAN:
+                return ((Comparable)object1).compareTo(object2) > 0;
+            case LESS_THAN:
+                return ((Comparable)object1).compareTo(object2) < 0;
+            case GREATER_EQUAL:
+                return ((Comparable)object1).compareTo(object2) >= 0;
+            case LESS_EQUAL:
+                return ((Comparable)object1).compareTo(object2) <= 0;
+            default:
+                return false;
         }
     }
 

@@ -434,6 +434,8 @@ public final class ActionCatalog {
 	libraries to contain minimum configuration. Such plugins do not require any
 	explicit action configuration.*/
 	public boolean isPluginActive (String pluginName) throws IllegalArgumentException {
+		System.out.println("ActionCatalog.isPluginActive(String)");
+		System.out.println("    Calling on: " + pluginName);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("isPluginActive (String) was called with a null string");
 		}

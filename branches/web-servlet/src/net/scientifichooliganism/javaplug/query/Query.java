@@ -6,10 +6,10 @@ public class Query {
     private String queryString;
     private String[] selectValues;
     private String[] fromValues;
-    private String[] prefixQuery = null;
+    private String[] wherePrefix = null;
 
     public Query(){
-        this(null);
+        this("");
     }
 
     public Query(String queryString){
@@ -18,12 +18,19 @@ public class Query {
         fromValues = new String[]{};
     }
 
-    public void setPrefixQuery(String in[]){
-        prefixQuery = in;
+    public Query(Query query){
+        this.queryString = query.queryString;
+        this.selectValues = query.selectValues;
+        this.fromValues = query.fromValues;
+        this.wherePrefix = query.wherePrefix;
     }
 
-    public String[] getPrefixQuery(){
-        return prefixQuery;
+    public void setWherePrefix(String in[]){
+        wherePrefix = in;
+    }
+
+    public String[] getWherePrefix(){
+        return wherePrefix;
     }
 
     public void setQueryString(String in){
@@ -51,10 +58,10 @@ public class Query {
     }
 
     public QueryNode buildTree(){
-        if(getPrefixQuery() != null) {
+        if(getWherePrefix() != null) {
             Stack<String> prefixStack = new Stack<>();
-            for (int i = prefixQuery.length - 1; i >= 0; i--) {
-                prefixStack.push(prefixQuery[i]);
+            for (int i = wherePrefix.length - 1; i >= 0; i--) {
+                prefixStack.push(wherePrefix[i]);
             }
             QueryNode root = new QueryNode();
             buildTree(root, prefixStack);

@@ -2,7 +2,7 @@ package net.scientifichooliganism.javaplug.vo;
 
 import net.scientifichooliganism.javaplug.interfaces.ValueObject;
 
-public class BaseValueObject implements ValueObject{
+public class BaseValueObject implements ValueObject {
 	private String id;
 	private String label;
 
@@ -45,4 +45,5 @@ public class BaseValueObject implements ValueObject{
 		ret = ret + "id: " + String.valueOf(id) + "\n";
 		return ret;
 	}
+
 }

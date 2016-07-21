@@ -268,7 +268,7 @@ public class PluginLoader {
 			}
 		} else if(file.isDirectory()){
 			for(File item : file.listFiles()){
-				loadLibraries(file);
+				loadLibraries(item);
 			}
 		}
 	}
@@ -312,8 +312,8 @@ public class PluginLoader {
 			DataLayer dl = DataLayer.getInstance();
 
 			//read plugin data from xml
-			Vector<Action> actions = (Vector<Action>)dl.query(ac, "SELECT action FROM plugin");
-			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "SELECT config FROM plugin");
+			Vector<Action> actions = (Vector<Action>)dl.query(ac, "action FROM plugin");
+			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "config FROM plugin");
 
 			/*
 			All plugins will be disabled
@@ -397,10 +397,15 @@ public class PluginLoader {
 
 	public static void main(String args[]){
 		bootstrap();
-		Collection<Configuration> configs = DataLayer.getInstance().query(ActionCatalog.getInstance(), "SELECT config FROM plugin");
+		ActionCatalog ac = ActionCatalog.getInstance();
+		DataLayer dl = DataLayer.getInstance();
+		dl.addStore("XMLDataStorePlugin");
+		Collection<Configuration> configs = dl.query(ac, "config FROM XMLDataStorePlugin WHERE Configuration.Module == \"Core\"");
 
 		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",
 					"net.scientifichooliganism.jsonplugin.JSONPlugin",
 					"jsonFromObject", new Object[]{configs});
+
+		System.out.println(json);
 	}
 }

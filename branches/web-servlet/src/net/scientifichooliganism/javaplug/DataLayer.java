@@ -1,19 +1,22 @@
 package net.scientifichooliganism.javaplug;
 
-import net.scientifichooliganism.javaplug.interfaces.Action;
-import net.scientifichooliganism.javaplug.interfaces.Configuration;
-import net.scientifichooliganism.javaplug.interfaces.ValueObject;
+import net.scientifichooliganism.javaplug.interfaces.*;
+import net.scientifichooliganism.javaplug.query.Query;
+import net.scientifichooliganism.javaplug.query.QueryNode;
+import net.scientifichooliganism.javaplug.query.QueryResolver;
 import net.scientifichooliganism.javaplug.util.Logger;
 import net.scientifichooliganism.javaplug.vo.BaseAction;
-import net.scientifichooliganism.javaplug.vo.BaseConfiguration;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.Vector;
+import java.util.*;
 
 public final class DataLayer {
 	private static DataLayer instance;
+	private QueryResolver queryResolver;
 	private Vector<String> stores;
+	private Map<String, Vector<String>> storeMap;
+	private boolean configuringId = false;
 	private Configuration lastId = null;
 	private Configuration shutdownStatus = null;
 	private int sequenceCount = 0;
@@ -26,6 +29,8 @@ public final class DataLayer {
 	private DataLayer() {
 		stores = new Vector<>();
 		defaultStore = null;
+		storeMap = new TreeMap<>();
+		queryResolver = QueryResolver.getInstance();
 	}
 
 	public static DataLayer getInstance () {
@@ -38,7 +43,7 @@ public final class DataLayer {
 
 	private String getDefaultStore(){
 		if(defaultStore == null) {
-			Vector<Configuration> configs = (Vector<Configuration>) query("SELECT config FROM data");
+			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration FROM data");
 			for (Configuration config : configs) {
 				if (config.getKey().equals("default_store")) {
 					defaultStore = config.getValue();
@@ -67,7 +72,7 @@ public final class DataLayer {
 
 			dl.persist(action);
 
-			Collection actions = dl.query("SELECT action FROM data");
+			Collection actions = dl.query("Action FROM data");
 
 			Action changeAction = (Action)actions.iterator().next();
 			changeAction.setName("NEW NAME!!");
@@ -79,59 +84,71 @@ public final class DataLayer {
 		}
 	}
 
-	public String getUniqueID(){
-		if (lastId == null || sequenceReset == -1 || shutdownStatus == null){
-			Vector<Configuration> configs = (Vector<Configuration>)query("SELECT config FROM data");
+	private void configureLastID(){
+		if (!configuringId && (lastId == null || sequenceReset == -1 || shutdownStatus == null)) {
+			configuringId = true;
+			Vector<Configuration> configs = (Vector<Configuration>) query("config FROM data");
 			boolean dirtyStartup = false;
-			for(Configuration config : configs){
-				if(config.getKey().equals("lastID")) {
+			for (Configuration config : configs) {
+				if (config.getKey().equals("lastID")) {
 					lastId = config;
-				} else if(config.getKey().equals("sequence_length")){
+				} else if (config.getKey().equals("seq_length")) {
 					sequenceReset = Integer.parseInt(config.getValue());
-				} else if(config.getKey().equals("shutdown_state")){
+				} else if (config.getKey().equals("shutdown_state")) {
 					shutdownStatus = config;
-					if(config.getValue().equals("dirty")){
+					if (config.getValue().equals("dirty")) {
 						dirtyStartup = true;
 					} else {
 						dirtyStartup = false;
 					}
 				}
-				// Set defaults if nothing was initialized from xml
-				if(lastId == null){
-					lastId = new BaseConfiguration();
-					lastId.setKey("lastID");
-					lastId.setValue("0");
-				}
-
-				if(sequenceReset == -1){
-					sequenceReset = 5;
-				}
-
-				if(shutdownStatus == null){
-					shutdownStatus = new BaseConfiguration();
-					shutdownStatus.setKey("shutdown_state");
-					shutdownStatus.setValue("dirty");
-				}
 			}
-			if(dirtyStartup){
-				lastId.setValue(new BigInteger(lastId.getValue()).add(new BigInteger(String.valueOf(sequenceReset))).toString());
-			}
-		}
-		String newId = (new BigInteger(lastId.getValue())).add(BigInteger.ONE).toString();
-		lastId.setValue(newId);
+//			// Set defaults if nothing was initialized from xml
+//			if (lastId == null) {
+//				lastId = new BaseConfiguration();
+//				lastId.setKey("lastID");
+//				lastId.setValue("0");
+//			}
+//
+//			if (sequenceReset == -1) {
+//				sequenceReset = 5;
+//			}
+//
+//			if (shutdownStatus == null) {
+//				shutdownStatus = new BaseConfiguration();
+//				shutdownStatus.setKey("shutdown_state");
+//				shutdownStatus.setValue("dirty");
+//			}
+//			if (dirtyStartup) {
+//				lastId.setValue(new BigInteger(lastId.getValue()).add(new BigInteger(String.valueOf(sequenceReset))).toString());
+//			}
 
-		// TODO: Assume dirty
-		if(sequenceCount == 0) {
-			sequenceCount = sequenceReset;
-			shutdownStatus.setValue("clean");
-			persist(lastId);
-			persist(shutdownStatus);
-		} else if(sequenceCount == sequenceReset) {
-			shutdownStatus.setValue("dirty");
-			persist(shutdownStatus);
-		} else {
-			sequenceCount--;
+			configuringId = false;
 		}
+	}
+
+	public String getUniqueID(){
+		String newId = null;
+		if (!configuringId && (lastId == null || sequenceReset == -1 || shutdownStatus == null)) {
+			configureLastID();
+		}
+		else if(!configuringId){
+			newId = (new BigInteger(lastId.getValue())).add(BigInteger.ONE).toString();
+			lastId.setValue(newId);
+
+			// TODO: Assume dirty
+			if (sequenceCount == 0) {
+				sequenceCount = sequenceReset;
+				shutdownStatus.setValue("clean");
+				persist(lastId);
+				persist(shutdownStatus);
+			} else if (sequenceCount == sequenceReset) {
+				shutdownStatus.setValue("dirty");
+				persist(shutdownStatus);
+			} else {
+				sequenceCount--;
+			}
+}
 		return newId;
 	}
 
@@ -153,7 +170,7 @@ public final class DataLayer {
 		return query(ActionCatalog.getInstance(), query);
 	}
 
-	public Collection query (ActionCatalog ac, String query) throws IllegalArgumentException, RuntimeException {
+	public Collection query (ActionCatalog ac, String queryStr) throws IllegalArgumentException, RuntimeException {
 //		System.out.println("DataLayer.query(ActionCatalog, String)");
 		Vector ret = new Vector();
 
@@ -165,20 +182,49 @@ public final class DataLayer {
 			throw new RuntimeException("query(ActionCatalog, String) stores is null");
 		}
 
-		validateQuery(query);
+		validateQuery(queryStr);
 
-		if (stores.size() <= 0) {
-			return queryWithoutStores(ac, query);
+
+		// Query translation for plugins
+		Query query = null;
+		Query translatedQuery = null;
+		try {
+			query = queryResolver.resolve(queryStr);
+			translatedQuery = translateQuery(query);
+		} catch (Exception exc){
+			exc.printStackTrace();
 		}
 
-		for (String store : stores) {
-			ret.addAll(queryPlugin(ac, store, query));
+
+		if (stores.size() <= 0) {
+			ret = new Vector(queryWithoutStores(ac, translatedQuery));
+		} else {
+
+			Vector<String> queryStores = new Vector<>();
+
+			if (translatedQuery.getFromValues().length > 0) {
+				for (int i = 0; i < translatedQuery.getFromValues().length; i++) {
+					queryStores.add(translatedQuery.getFromValues()[i]);
+				}
+			} else {
+				queryStores = stores;
+			}
+
+			// Query and aggregate plugins
+			for (String store : queryStores) {
+				ret.addAll(queryPlugin(ac, store, translatedQuery));
+			}
+		}
+
+		// Correlate results
+		if(query.getWherePrefix() != null && query.getWherePrefix().length > 0) {
+			ret = new Vector(correlateData(ret, query));
 		}
 
 		return ret;
 	}
 
-	private Collection queryPlugin (ActionCatalog ac, String plugin, String query) {
+	private Collection queryPlugin (ActionCatalog ac, String plugin, Query query){
 //		System.out.println("DataLayer.queryPlugin(ActionCatalog, String, String)");
 		Vector<? extends ValueObject> ret = null;
 
@@ -191,6 +237,9 @@ public final class DataLayer {
 //			System.out.println("		" + action[0]);
 //			System.out.println("		" + action[1]);
 //			System.out.println("		" + action[2]);
+
+
+
 			ret = (Vector)ac.performAction(action[0], action[1], action[2], new Object[]{query});
 
 			try{
@@ -208,14 +257,272 @@ public final class DataLayer {
 		return ret;
 	}
 
+	private Set correlateData(Iterable data, Query query){
+		Set ret = new HashSet();
+		QueryNode tree = query.buildTree();
+
+		// Sort data by class type
+		Map<Class, Collection> sortedData = new TreeMap<>();
+		sortedData.put(Action.class, new ArrayList());
+		sortedData.put(Application.class, new ArrayList());
+		sortedData.put(Block.class, new ArrayList());
+		sortedData.put(Configuration.class, new ArrayList());
+		sortedData.put(Environment.class, new ArrayList());
+		sortedData.put(Event.class, new ArrayList());
+		sortedData.put(Release.class, new ArrayList());
+		sortedData.put(Task.class, new ArrayList());
+		sortedData.put(TaskCategory.class, new ArrayList());
+		sortedData.put(Transaction.class, new ArrayList());
+
+		for(Object o : data){
+		    for(Class key : sortedData.keySet()){
+		    	if(key.isInstance(o)) {
+					sortedData.get(key).add(o);
+				}
+			}
+		}
+
+		// correlate data
+		for(String type : query.getSelectValues()){
+			Vector<String> qualifiedTypes = resolveQualifiedClassName(type);
+			for(Class queryType : sortedData.keySet()){
+			    for(String qType : qualifiedTypes) {
+			    	try {
+			    	    // TODO: Switch classes they are backwards
+						if (Class.forName(qType).isAssignableFrom(queryType)) {
+							for (Object object : sortedData.get(qType)) {
+								if (checkDataAgainstQuery(object, tree, sortedData)) {
+									ret.add(object);
+								}
+							}
+						}
+					} catch (ClassNotFoundException exc){
+						// If this gets called something probably went
+						// terribly wrong
+						exc.printStackTrace();
+					}
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	private boolean checkDataAgainstQuery(Object member, QueryNode node, Map<Class, Collection> data){
+		String leftProperty = null, rightProperty = null;
+		Boolean leftResult = null, rightResult = null;
+		Vector<Object> leftValues = new Vector<>(), rightValues = new Vector<>();
+		QueryNode leftChild = node.getLeftChild(), rightChild = node.getRightChild();
+
+		if(leftChild != null) {
+			if (leftChild.isProperty()){
+				leftProperty = leftChild.getValue();
+			} else if (leftChild.isLiteral()){
+				String valueString = leftChild.getValue();
+				leftValues.add(valueString.substring(1, valueString.length() - 1));
+			} else if (node.getLeftChild().isOperator()) {
+				leftResult = checkDataAgainstQuery(member, leftChild, data);
+			} else {
+				throw new RuntimeException("checkDataAgainstQuery: where tree could not be evaluated, node type unknown");
+			}
+		}
+
+		if(rightChild != null) {
+			if (rightChild.isProperty()){
+				rightProperty = rightChild.getValue();
+			} else if (rightChild.isLiteral()){
+				String valueString = rightChild.getValue();
+				rightValues.add(valueString.substring(1, valueString.length() - 1));
+			} else if (rightChild.isOperator()){
+				rightResult = checkDataAgainstQuery(member, rightChild, data);
+			} else {
+				throw new RuntimeException("checkDataAgainstQuery: where tree could not be evaluated, node type unknown");
+			}
+		}
+
+		if(leftProperty != null){
+			Vector<String> leftPropertyTypes = resolveQualifiedClassName(leftProperty);
+			if(leftPropertyTypes.contains(member.getClass().getName())){
+				leftValues.add(evaluateProperty(member, leftProperty).toString());
+			} else {
+				for(String type : leftPropertyTypes) {
+					for(Object item : data.get(type)){
+						leftValues.add(evaluateProperty(item, leftProperty).toString());
+					}
+				}
+			}
+		}
+
+		if(rightProperty != null){
+			Vector<String> rightPropertyTypes = resolveQualifiedClassName(rightProperty);
+			if(rightPropertyTypes.contains(member.getClass().getName())){
+				rightValues.add(evaluateProperty(member, rightProperty).toString());
+			} else {
+				for(String type : rightPropertyTypes){
+					for(Object item : data.get(type)){
+						rightValues.add(evaluateProperty(item, rightProperty).toString());
+					}
+				}
+			}
+		}
+
+		if(leftResult != null) {
+			return node.getOperator().evaluate(leftResult, rightResult);
+		}
+
+		for(Object leftValue : leftValues){
+			for(Object rightValue : rightValues){
+				if(node.getOperator().evaluate(leftValue, rightValue)){
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private Object evaluateProperty(Object object, String propertyStr){
+		Vector<String> properties = new Vector<>();
+		if(propertyStr.contains(object.getClass().getName())){
+			propertyStr = propertyStr.replace(object.getClass().getName(), "");
+			for(String item : propertyStr.split("\\.")){
+				if(!item.isEmpty()){
+					properties.add(item);
+				}
+			}
+		} else {
+			String propertyArray[] = propertyStr.split("\\.");
+			for(String item : propertyArray){
+				if(!item.isEmpty()) {
+					properties.add(item);
+				}
+			}
+		}
+
+		Object result = object;
+		for(String property : properties) {
+			Method methods[] = result.getClass().getMethods();
+			Method getter = null;
+			for(Method method : methods){
+				if(method.getName().equals("get" + property)){
+					getter = method;
+				}
+			}
+			if(getter != null){
+				try {
+					result = getter.invoke(result);
+				} catch (Exception exc){
+					throw new RuntimeException("Could not find " + propertyStr + " on object " + object.getClass().getName());
+				}
+			}
+		}
+		return result;
+	}
+
+	// Finds a fully qualified last name from an "unqualified name" which is in the form
+	// Object.Property.Property (up to 2 properties, can be changed by variable TO_REMOVE)
+	private Vector<String> resolveQualifiedClassName(String unqualifiedName){
+		Vector<String> ret = new Vector<>();
+		int TO_REMOVE = 2;
+		String properties[] = new String[TO_REMOVE];
+
+		for(String type : storeMap.keySet()) {
+			if (type.contains(unqualifiedName)) {
+				ret.add(type);
+			}
+		}
+
+		for(int i = 0; i < TO_REMOVE; i++){
+			if(unqualifiedName.contains(".")) {
+				properties[i] = unqualifiedName.substring(unqualifiedName.lastIndexOf(".") + 1);
+			}
+			for (String type : storeMap.keySet()) {
+				if (type.contains(unqualifiedName)) {
+					try {
+						Class klass = Class.forName(type);
+						// Check all properties exist
+						boolean found = false;
+						for (int j = i; j >= 0; j++) {
+							Method methods[] = klass.getMethods();
+							for (Method method : methods) {
+								if (method.getName().equals("get" + properties[j])) {
+									klass = method.getReturnType();
+									if (j == 0) {
+										found = true;
+									}
+								}
+							}
+						}
+						if (found) {
+							ret.add(type);
+						}
+					} catch (ClassNotFoundException exc) {
+						// Suppress, we expect this exception at times
+					}
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	// Method adjusts query object for specific plugin, to ensure proper correlation and
+	// aggregation between data stores
+	private Query translateQuery(Query query){
+		Query translatedQuery = new Query(query);
+
+		// If we only have one store to query, then no modification is needed
+		if(query.getFromValues().length != 1){
+			Vector<String> types = new Vector<>();
+			boolean hasRelation = checkRelationGetTypes(query.buildTree(), types);
+			if(hasRelation){
+				int numStores = 0;
+				for(int i = 0; i < types.size() && numStores < 2; i++){
+					numStores += resolveQualifiedClassName(types.elementAt(i)).size();
+				}
+
+				// We now know we are selecting relational data between
+				// multiple data stores, so the entire aggregation and
+				// correlation should happen in the DataLayer, remove query clause
+				if(numStores > 1){
+					translatedQuery.setWherePrefix(null);
+				}
+			}
+		}
+
+		return translatedQuery;
+	}
+
+	private boolean checkRelationGetTypes(QueryNode node, List<String> types){
+		boolean hasRelation = false, leftRelation = false, rightRelation = false;
+		QueryNode leftChild = node.getLeftChild(), rightChild = node.getRightChild();
+
+		if(node.isProperty()){
+			types.add(node.getValue());
+		}
+
+		if(leftChild != null && rightChild != null) {
+			hasRelation = node.getLeftChild().isProperty() && node.getRightChild().isProperty();
+		}
+		if(leftChild != null){
+			leftRelation = checkRelationGetTypes(leftChild, types);
+		}
+		if(rightChild != null){
+			rightRelation = checkRelationGetTypes(rightChild, types);
+		}
+
+		return hasRelation || leftRelation || rightRelation;
+	}
+
 	/**This method is an internal method used to load configurations and actions during initialization.*/
-	private Collection queryWithoutStores (ActionCatalog ac, String query) throws IllegalArgumentException {
+	private Collection queryWithoutStores (ActionCatalog ac, Query query) throws IllegalArgumentException {
 //		System.out.println("DataLayer.queryWithoutStores(ActionCatalog, String)");
 		if (ac == null) {
 			throw new IllegalArgumentException("query(ActionCatalog, String) was called with a null ActionCatalog");
 		}
 
 		Vector ret = new Vector();
+
 
 		for (String plugin : ac.keySet()) {
 			if ((ac.isPluginStorage(plugin)) && (ac.isPluginActive(plugin))) {
@@ -329,6 +636,18 @@ public final class DataLayer {
 		}
 
 		stores.add(store);
+
+		// Determine what types are supported by the new store and add them to the store map
+		Collection<Configuration> configurations = (Collection<Configuration>)query("config FROM XMLDataStorePlugin");
+		for(Configuration config : configurations){
+		    if(config.getKey().equals("provides")) {
+				if (!storeMap.containsKey(config.getValue())) {
+					storeMap.put(config.getValue(), new Vector<>());
+				} else {
+					storeMap.get(config.getValue()).add(config.getModule());
+				}
+			}
+		}
 	}
 
 	public void removeStore(String store) throws IllegalArgumentException {
