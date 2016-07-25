@@ -6,6 +6,7 @@ public class Query {
     private String queryString;
     private String[] selectValues;
     private String[] fromValues;
+    private String whereString;
     private String[] wherePrefix = null;
 
     public Query(){
@@ -39,6 +40,14 @@ public class Query {
 
     public String getQueryString(){
         return queryString;
+    }
+
+    public void setWhereString(String in){
+        whereString = in;
+    }
+
+    public String getWhereString(){
+        return whereString;
     }
 
     public void setSelectValues(String values[]){

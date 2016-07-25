@@ -122,6 +122,7 @@ public class QueryResolver {
         }
 
         if(whereString != null) {
+            ret.setWhereString(whereString);
             String expressionParts[] = tokenizeExpression(whereString);
             System.out.println();
             System.out.println("Where String: " + whereString);

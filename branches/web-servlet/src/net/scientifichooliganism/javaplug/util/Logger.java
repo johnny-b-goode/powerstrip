@@ -71,13 +71,11 @@ public class Logger {
     }
 
     public static void log(String message) {
-        // TODO: What logging level to use?
         // Using fine for now to debug
         getLogger().log(Level.FINE, message);
     }
 
     public static void log(String message, Object[] params) {
-        // TODO: What logging level to use
         getLogger().log(Level.FINE, message, params);
     }
 

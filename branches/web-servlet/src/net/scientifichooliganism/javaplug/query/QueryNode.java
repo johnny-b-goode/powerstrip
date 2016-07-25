@@ -69,6 +69,76 @@ public class QueryNode {
             || value.startsWith("\'") && value.endsWith("\'");
     }
 
+    public void removeNots(){
+        if(isOperator()){
+            QueryOperator operator = getOperator();
+            if(operator == QueryOperator.NOT){
+                QueryNode parent = getParent();
+                QueryNode child = null;
+
+                if(getRightChild() != null){
+                    child = getRightChild();
+                } else {
+                    child = getLeftChild();
+                }
+
+                if(parent == null){
+                    // Root node case
+                    setValue(child.getValue());
+                    setLeftChild(child.getLeftChild());
+                    setRightChild(child.getRightChild());
+                    flipLogicBelow();
+                } else {
+                    if(parent.getLeftChild() == this){
+                        parent.setLeftChild(child);
+                    } else if(parent.getRightChild() == this){
+                        parent.setRightChild(child);
+                    }
+                    child.flipLogicBelow();
+                }
+            }
+
+            // Recursively check down the tree
+            if(getLeftChild() != null){
+                getLeftChild().removeNots();
+            }
+
+            if(getRightChild() != null){
+                getRightChild().removeNots();
+            }
+        }
+    }
+
+    private void flipLogicBelow(){
+        if(isOperator()){
+            QueryOperator operator = getOperator();
+            if(operator == QueryOperator.NOT) {
+                QueryNode parent = getParent();
+                QueryNode child = null;
+
+                if(getRightChild() != null){
+                    child = getRightChild();
+                } else {
+                    child = getLeftChild();
+                }
+
+                if(parent.getLeftChild() == this){
+                    parent.setLeftChild(child);
+                } else if(parent.getRightChild() == this){
+                    parent.setRightChild(child);
+                }
+            } else {
+                setValue(getOperator().getOpposite().toString());
+                if(getLeftChild() != null){
+                    getLeftChild().flipLogicBelow();
+                }
+                if(getRightChild() != null){
+                    getRightChild().flipLogicBelow();
+                }
+            }
+        }
+    }
+
     public void consolePrint(){
         consolePrint(0);
     }

@@ -262,7 +262,7 @@ public final class DataLayer {
 		QueryNode tree = query.buildTree();
 
 		// Sort data by class type
-		Map<Class, Collection> sortedData = new TreeMap<>();
+		Map<Class, Collection> sortedData = new HashMap<>();
 		sortedData.put(Action.class, new ArrayList());
 		sortedData.put(Application.class, new ArrayList());
 		sortedData.put(Block.class, new ArrayList());
@@ -284,13 +284,13 @@ public final class DataLayer {
 
 		// correlate data
 		for(String type : query.getSelectValues()){
-			Vector<String> qualifiedTypes = resolveQualifiedClassName(type);
-			for(Class queryType : sortedData.keySet()){
-			    for(String qType : qualifiedTypes) {
+			Set<String> qualifiedTypes = resolveQualifiedClassName(type);
+			for(Class dataType : sortedData.keySet()){
+			    for(String queryType : qualifiedTypes) {
 			    	try {
 			    	    // TODO: Switch classes they are backwards
-						if (Class.forName(qType).isAssignableFrom(queryType)) {
-							for (Object object : sortedData.get(qType)) {
+						if (Class.forName(queryType).isAssignableFrom(dataType)) {
+							for (Object object : sortedData.get(dataType)) {
 								if (checkDataAgainstQuery(object, tree, sortedData)) {
 									ret.add(object);
 								}
@@ -341,26 +341,60 @@ public final class DataLayer {
 		}
 
 		if(leftProperty != null){
-			Vector<String> leftPropertyTypes = resolveQualifiedClassName(leftProperty);
-			if(leftPropertyTypes.contains(member.getClass().getName())){
-				leftValues.add(evaluateProperty(member, leftProperty).toString());
+			Set<String> leftPropertyTypes = resolveQualifiedClassName(leftProperty);
+            boolean memberIsType = false;
+			try {
+				for(String type : leftPropertyTypes){
+					Class klass = Class.forName(type);
+					if(klass.isInstance(member)){
+						memberIsType = true;
+					}
+				}
+			} catch (ClassNotFoundException exc){
+			    // Something went terribly wrong!
+				exc.printStackTrace();
+			}
+
+			if(memberIsType){
+				leftValues.add(evaluateProperty(member, leftProperty));
 			} else {
 				for(String type : leftPropertyTypes) {
-					for(Object item : data.get(type)){
-						leftValues.add(evaluateProperty(item, leftProperty).toString());
+					for(Class classType : data.keySet()){
+						if(classType.getName().equals(type)) {
+							for(Object item : data.get(classType)) {
+								leftValues.add(evaluateProperty(item, leftProperty));
+							}
+						}
 					}
 				}
 			}
 		}
 
 		if(rightProperty != null){
-			Vector<String> rightPropertyTypes = resolveQualifiedClassName(rightProperty);
-			if(rightPropertyTypes.contains(member.getClass().getName())){
-				rightValues.add(evaluateProperty(member, rightProperty).toString());
+			Set<String> rightPropertyTypes = resolveQualifiedClassName(rightProperty);
+			boolean memberIsType = false;
+			try {
+				for(String type : rightPropertyTypes){
+					Class klass = Class.forName(type);
+					if(klass.isInstance(member)){
+						memberIsType = true;
+					}
+				}
+			} catch (ClassNotFoundException exc){
+			    // Something went terribly wrong!
+				exc.printStackTrace();
+			}
+
+			if(memberIsType){
+				rightValues.add(evaluateProperty(member, rightProperty));
 			} else {
 				for(String type : rightPropertyTypes){
-					for(Object item : data.get(type)){
-						rightValues.add(evaluateProperty(item, rightProperty).toString());
+					for(Class classType : data.keySet()){
+						if(classType.getName().equals(type)) {
+							for(Object item : data.get(classType)) {
+								rightValues.add(evaluateProperty(item, rightProperty));
+							}
+						}
 					}
 				}
 			}
@@ -421,20 +455,22 @@ public final class DataLayer {
 
 	// Finds a fully qualified last name from an "unqualified name" which is in the form
 	// Object.Property.Property (up to 2 properties, can be changed by variable TO_REMOVE)
-	private Vector<String> resolveQualifiedClassName(String unqualifiedName){
-		Vector<String> ret = new Vector<>();
+	private Set<String> resolveQualifiedClassName(String unqualifiedName){
+		Set<String> ret = new TreeSet<>();
 		int TO_REMOVE = 2;
 		String properties[] = new String[TO_REMOVE];
 
 		for(String type : storeMap.keySet()) {
-			if (type.contains(unqualifiedName)) {
+			if (type.toLowerCase().contains(unqualifiedName.toLowerCase())) {
 				ret.add(type);
 			}
 		}
 
 		for(int i = 0; i < TO_REMOVE; i++){
 			if(unqualifiedName.contains(".")) {
-				properties[i] = unqualifiedName.substring(unqualifiedName.lastIndexOf(".") + 1);
+				int propertyIndex = unqualifiedName.lastIndexOf(".");
+				properties[i] = unqualifiedName.substring(propertyIndex + 1);
+				unqualifiedName = unqualifiedName.substring(0, propertyIndex);
 			}
 			for (String type : storeMap.keySet()) {
 				if (type.contains(unqualifiedName)) {
@@ -442,7 +478,7 @@ public final class DataLayer {
 						Class klass = Class.forName(type);
 						// Check all properties exist
 						boolean found = false;
-						for (int j = i; j >= 0; j++) {
+						for (int j = i; j >= 0; j--) {
 							Method methods[] = klass.getMethods();
 							for (Method method : methods) {
 								if (method.getName().equals("get" + properties[j])) {
@@ -474,7 +510,11 @@ public final class DataLayer {
 		// If we only have one store to query, then no modification is needed
 		if(query.getFromValues().length != 1){
 			Vector<String> types = new Vector<>();
-			boolean hasRelation = checkRelationGetTypes(query.buildTree(), types);
+            QueryNode tree = query.buildTree();
+            boolean hasRelation = false;
+            if(tree != null) {
+				hasRelation = checkRelationGetTypes(query.buildTree(), types);
+			}
 			if(hasRelation){
 				int numStores = 0;
 				for(int i = 0; i < types.size() && numStores < 2; i++){
@@ -638,7 +678,7 @@ public final class DataLayer {
 		stores.add(store);
 
 		// Determine what types are supported by the new store and add them to the store map
-		Collection<Configuration> configurations = (Collection<Configuration>)query("config FROM XMLDataStorePlugin");
+		Collection<Configuration> configurations = (Collection<Configuration>)query("Configuration FROM XMLDataStorePlugin");
 		for(Configuration config : configurations){
 		    if(config.getKey().equals("provides")) {
 				if (!storeMap.containsKey(config.getValue())) {

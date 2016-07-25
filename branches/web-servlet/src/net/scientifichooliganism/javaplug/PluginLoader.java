@@ -312,8 +312,8 @@ public class PluginLoader {
 			DataLayer dl = DataLayer.getInstance();
 
 			//read plugin data from xml
-			Vector<Action> actions = (Vector<Action>)dl.query(ac, "action FROM plugin");
-			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "config FROM plugin");
+			Vector<Action> actions = (Vector<Action>)dl.query(ac, "action");
+			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "configuration");
 
 			/*
 			All plugins will be disabled
@@ -400,7 +400,7 @@ public class PluginLoader {
 		ActionCatalog ac = ActionCatalog.getInstance();
 		DataLayer dl = DataLayer.getInstance();
 		dl.addStore("XMLDataStorePlugin");
-		Collection<Configuration> configs = dl.query(ac, "config FROM XMLDataStorePlugin WHERE Configuration.Module == \"Core\"");
+		Collection<Configuration> configs = dl.query(ac, "config FROM XMLDataStorePlugin WHERE !(Configuration.Sequence < \"3\") || Configuration.Module == \"Core\" && Configuration.Key == \"seq_length\"");
 
 		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",
 					"net.scientifichooliganism.jsonplugin.JSONPlugin",
