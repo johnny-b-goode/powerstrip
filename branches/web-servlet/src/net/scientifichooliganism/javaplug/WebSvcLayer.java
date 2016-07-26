@@ -1,7 +1,5 @@
 package net.scientifichooliganism.javaplug;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +11,7 @@ import java.util.Map;
 public final class WebSvcLayer extends HttpServlet {
 
 	private ActionCatalog actionCatalog = null;
+	private DataLayer dl = null;
 
 	public WebSvcLayer() {
 		//
@@ -23,6 +22,7 @@ public final class WebSvcLayer extends HttpServlet {
 		super.init();
 		PluginLoader.bootstrap(getServletContext().getClassLoader());
 		actionCatalog = ActionCatalog.getInstance();
+        dl = DataLayer.getInstance();
 	}
 
 	@Override
@@ -73,14 +73,35 @@ public final class WebSvcLayer extends HttpServlet {
 					case "query":
 						if(parameters.containsKey("query")) {
 							String query = ((String[]) parameters.get("query"))[0];
-							result = DataLayer.getInstance().query(actionCatalog, query);
+							result = dl.query(actionCatalog, query);
 						} else {
 							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
 						}
 						break;
 					case "persist":
-						throw new NotImplementedException();
-						// break;
+					    String json = null;
+						Object object = null;
+						if(parameters.containsKey("object")){
+							json = ((String[])parameters.get("object"))[0];
+						} else {
+							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
+						}
+
+						if(json != null){
+							object = actionCatalog.performAction("JSONPlugin",
+									"net.scientifichooliganism.jsonplugin.JSONPlugin",
+                                    "objectFromJson", new Object[]{json});
+						} else {
+							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No json string found");
+						}
+
+						if(object != null){
+							dl.persist(object);
+						} else {
+							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not create object from json");
+						}
+
+						break;
 					case "remove":
 						break;
 					default:
