@@ -26,6 +26,13 @@ public class Query {
         this.wherePrefix = query.wherePrefix;
     }
 
+    public void copy(Query query){
+        this.queryString = query.queryString;
+        this.selectValues = query.selectValues;
+        this.fromValues = query.fromValues;
+        this.wherePrefix = query.wherePrefix;
+    }
+
     public void setWherePrefix(String in[]){
         wherePrefix = in;
     }

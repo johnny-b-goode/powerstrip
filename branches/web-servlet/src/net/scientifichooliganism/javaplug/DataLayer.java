@@ -10,6 +10,10 @@ import net.scientifichooliganism.javaplug.vo.BaseAction;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public final class DataLayer {
 	private static DataLayer instance;
@@ -172,7 +176,7 @@ public final class DataLayer {
 
 	public Collection query (ActionCatalog ac, String queryStr) throws IllegalArgumentException, RuntimeException {
 //		System.out.println("DataLayer.query(ActionCatalog, String)");
-		Vector ret = new Vector();
+		final CopyOnWriteArrayList results = new CopyOnWriteArrayList();
 
 		if (ac == null) {
 			throw new RuntimeException("query(ActionCatalog, String) ActionCatalog is null");
@@ -187,17 +191,16 @@ public final class DataLayer {
 
 		// Query translation for plugins
 		Query query = null;
-		Query translatedQuery = null;
+		final Query translatedQuery = new Query();
 		try {
 			query = queryResolver.resolve(queryStr);
-			translatedQuery = translateQuery(query);
+			translatedQuery.copy(translateQuery(query));
 		} catch (Exception exc){
 			exc.printStackTrace();
 		}
 
-
 		if (stores.size() <= 0) {
-			ret = new Vector(queryWithoutStores(ac, translatedQuery));
+		    results.addAll(queryWithoutStores(ac, translatedQuery));
 		} else {
 
 			Vector<String> queryStores = new Vector<>();
@@ -210,15 +213,36 @@ public final class DataLayer {
 				queryStores = stores;
 			}
 
+			ExecutorService executorService = Executors.newFixedThreadPool(queryStores.size());
+
 			// Query and aggregate plugins
 			for (String store : queryStores) {
-				ret.addAll(queryPlugin(ac, store, translatedQuery));
+				Runnable r = new Runnable() {
+					@Override
+					public void run() {
+						results.addAll(queryPlugin(ac, store, translatedQuery));
+					}
+				};
+
+				executorService.execute(r);
+			}
+
+			executorService.shutdown();
+
+			try{
+				executorService.awaitTermination(5, TimeUnit.MINUTES);
+			} catch (InterruptedException exc){
+				exc.printStackTrace();
 			}
 		}
 
+
+		Vector ret = new Vector();
 		// Correlate results
 		if(query.getWherePrefix() != null && query.getWherePrefix().length > 0) {
-			ret = new Vector(correlateData(ret, query));
+			ret.addAll(correlateData(results, query));
+		} else {
+			ret.addAll(results);
 		}
 
 		return ret;
@@ -283,6 +307,7 @@ public final class DataLayer {
 		}
 
 		// correlate data
+		// This could probably be parallelized one day, using the Fork/Join construct here may be good.
 		for(String type : query.getSelectValues()){
 			Set<String> qualifiedTypes = resolveQualifiedClassName(type);
 			for(Class dataType : sortedData.keySet()){

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="Java_Plugin_Library" default="all" basedir="..">
+<project name="Java_Plugin_Library" default="build" basedir="..">
 	<!--The tstamp tag allows us to use the DSTAMP, TSTAMP, and TODAY properties
 	later. These are the date stamp, time stamp, and the date in the format of
 	four letter month, two digit day, and four digit year.-->
