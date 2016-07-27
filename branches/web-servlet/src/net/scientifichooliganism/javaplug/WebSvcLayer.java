@@ -1,16 +1,20 @@
 package net.scientifichooliganism.javaplug;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.nio.CharBuffer;
 import java.util.Map;
 
 public final class WebSvcLayer extends HttpServlet {
 
-	private ActionCatalog actionCatalog = null;
+	private ActionCatalog ac = null;
 	private DataLayer dl = null;
 
 	public WebSvcLayer() {
@@ -21,7 +25,7 @@ public final class WebSvcLayer extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 		PluginLoader.bootstrap(getServletContext().getClassLoader());
-		actionCatalog = ActionCatalog.getInstance();
+		ac = ActionCatalog.getInstance();
         dl = DataLayer.getInstance();
 	}
 
@@ -29,12 +33,33 @@ public final class WebSvcLayer extends HttpServlet {
 	public void doGet (HttpServletRequest request, HttpServletResponse response) throws
 		ServletException, IOException {
 		PrintWriter pwResponse = response.getWriter();
-		String contentType = null;
+		String requestType = null;
+        String contentType = null;
+		int contentLength = request.getContentLength();
 
 		if(request.getHeader("Accept") != null){
-			contentType = request.getHeader("Accept");
-			response.setContentType(contentType);
-			System.out.println("Response type is " + contentType);
+			requestType = request.getHeader("Accept");
+			response.setContentType(requestType);
+			System.out.println("Response type is " + requestType);
+		}
+
+		if(request.getHeader("Content-Type") != null){
+			contentType = request.getHeader("Content-Type");
+            System.out.println("Content type is " + contentType);
+		} else {
+			try(Reader reader = request.getReader()){
+				char ch;
+				while(contentType == null && (int)(ch = (char)reader.read()) != -1){
+
+					// Simplistic method for determining whether our
+					// content is json or xml
+				    if(ch == '"' || ch == '{'){
+				    	contentType = "json";
+					} else if(ch == '<'){
+						contentType = "xml";
+					}
+				}
+			}
 		}
 
 
@@ -60,20 +85,13 @@ public final class WebSvcLayer extends HttpServlet {
 
 			Map parameters = request.getParameterMap();
 
-//			if ((parameters != null) && (parameters.size() > 0)) {
-//				System.out.println(parameters.keySet());
-//				for (Object obj : parameters.keySet()) {
-//					System.out.println(obj + ": " + ((String[])parameters.get(obj))[0]);
-//				}
-//			}
-
+			Object result = null;
 			if(plugin.toLowerCase().equals("data")){
-				Object result = null;
 				switch(action.toLowerCase()){
 					case "query":
 						if(parameters.containsKey("query")) {
 							String query = ((String[]) parameters.get("query"))[0];
-							result = dl.query(actionCatalog, query);
+							result = dl.query(ac, query);
 						} else {
 							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
 						}
@@ -88,7 +106,7 @@ public final class WebSvcLayer extends HttpServlet {
 						}
 
 						if(json != null){
-							object = actionCatalog.performAction("JSONPlugin",
+							object = ac.performAction("JSONPlugin",
 									"net.scientifichooliganism.jsonplugin.JSONPlugin",
                                     "objectFromJson", new Object[]{json});
 						} else {
@@ -103,31 +121,81 @@ public final class WebSvcLayer extends HttpServlet {
 
 						break;
 					case "remove":
-						break;
+					    throw new NotImplementedException();
 					default:
 						response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for " + plugin + ".");
 						break;
 				}
 
-				switch(contentType){
-					case "text/json":
-					case "application/json":
-					default:
-						String json = (String)actionCatalog.performAction("JSONPlugin",
-							"net.scientifichooliganism.jsonplugin.JSONPlugin",
-							"jsonFromObject", new Object[]{result});
-						pwResponse.println(json);
-						break;
-				}
+			}
+			else {
+				result = sendToPlugin(plugin, action, new Object[]{});
 			}
 
+			if(result != null){
+				sendResponse(response, result, requestType);
+			}
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			pwResponse.println("ERROR");
 		}
 	}
 
+	private Object objectFromContent(Reader content, String contentType, int contentLength){
+		CharBuffer buffer = CharBuffer.allocate(contentLength);
+		try {
+			content.read(buffer);
+		} catch(Exception exc){
+			exc.printStackTrace();
+		}
+		Object result = null;
+		if (contentType != null && contentType.contains("xml")) {
+			result = ac.performAction("XMLPlugin",
+					"net.scientifichooliganism.xmlplugin.XMLPlugin",
+					"objectFromString", new Object[]{buffer.toString()});
+		} else {
+			// Assume JSON
+			result = ac.performAction("JSONPlugin",
+					"net.scientifichooliganism.jsonplugin.JSONPlugin",
+					"objectFromJson", new Object[]{buffer.toString()});
+		}
+
+		return result;
+	}
+
+	private void sendResponse(HttpServletResponse response, Object object, String requestType){
+		String result = null;
+		if (object instanceof String) {
+			result = (String)object;
+		} else {
+		    if(requestType != null && requestType.toLowerCase().contains("xml")){
+				result = (String)ac.performAction("XMLPlugin",
+						"net.scientifichooliganism.xmlplugin.XMLPlugin",
+						"stringFromObject", new Object[]{object});
+			} else {
+				// Assume json if XML not requested explicitly
+				result = (String)ac.performAction("JSONPlugin",
+						"net.scientifichooliganism.jsonplugin.JSONPlugin",
+						"jsonFromObject", new Object[]{object});
+			}
+		}
+
+		if(result != null){
+			try{
+				response.getWriter().write(result);
+			} catch(Exception exc){
+				exc.printStackTrace();
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			}
+		} else {
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	private Object sendToPlugin(String plugin, String action, Object[] args){
+		String[] actionInfo = ac.findAction(plugin + " " + action);
+		return ac.performAction(actionInfo[0], actionInfo[1], actionInfo[2], args);
+	}
 
 }
