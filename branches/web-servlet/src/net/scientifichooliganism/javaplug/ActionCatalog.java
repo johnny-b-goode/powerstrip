@@ -46,7 +46,6 @@ public final class ActionCatalog {
 			methods = new ConcurrentHashMap<String, Method>();
 		}
 		catch (Exception exc) {
-			Logger.error(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
@@ -88,7 +87,6 @@ public final class ActionCatalog {
 			plugins.putIfAbsent(pluginName, pluginPath);
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}
@@ -669,7 +667,6 @@ public final class ActionCatalog {
 						objectMethod = klass.getMethod(actions[action][2], args);
 					}
 					catch (NoSuchMethodException exc){
-						Logger.info(exc.getMessage());
 						objectMethod = findMethod(klass, actions[action][2], args);
 						if(objectMethod == null){
 //							Logger.error(exc.getMessage());
@@ -878,7 +875,6 @@ public final class ActionCatalog {
 			ac.removePlugin("HelloWorldPugin2");
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}

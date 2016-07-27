@@ -2,7 +2,6 @@ package net.scientifichooliganism.javaplug;
 
 import net.scientifichooliganism.javaplug.interfaces.Action;
 import net.scientifichooliganism.javaplug.interfaces.Configuration;
-import net.scientifichooliganism.javaplug.util.Logger;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -94,11 +93,9 @@ public class PluginLoader {
 
 			}
 			catch (ZipException zxc) {
-				Logger.log(zxc.getMessage());
 				zxc.printStackTrace();
 			}
 			catch (IOException iox) {
-				Logger.log(iox.getMessage());
 				iox.printStackTrace();
 			}
 			finally {
@@ -106,7 +103,6 @@ public class PluginLoader {
 					zipIn.close();
 				}
 				catch (Exception exc) {
-					Logger.log(exc.getMessage());
 					//exc.printStackTrace();
 				}
 			}
@@ -115,7 +111,6 @@ public class PluginLoader {
 			loadLibraries(pluginDirectory);
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 
@@ -160,7 +155,6 @@ public class PluginLoader {
 			}
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 
@@ -195,7 +189,6 @@ public class PluginLoader {
 						}
 					}
 					catch (Exception exc) {
-						Logger.log(exc.getMessage());
 						exc.printStackTrace();
 					}
 				}
@@ -218,7 +211,6 @@ public class PluginLoader {
 						url = (new File(ac.getPluginPath(plugin))).toURI().toURL();
 					}
 					catch (MalformedURLException mue) {
-						Logger.log(mue.getMessage());
 						mue.printStackTrace();
 					}
 
@@ -240,13 +232,11 @@ public class PluginLoader {
 				mthd.invoke(defaultClassLoader, new Object[]{thisURL});
 			}
 			catch (Exception exc) {
-				Logger.log(exc.getMessage());
 //				System.out.println("messin' with the classloader failed:");
 				exc.printStackTrace();
 			}
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 
@@ -366,7 +356,6 @@ public class PluginLoader {
 								}
 							}
 							catch (Exception exc) {
-								Logger.log(exc.getMessage());
 								exc.printStackTrace();
 							}
 						}
@@ -379,7 +368,6 @@ public class PluginLoader {
 								ac.setPluginActive(config.getModule(), false);
 								String message = config.getModule() + " depends on " + pluginName +
 										" which was either not added or not enabled.";
-								Logger.warn(message);
 							}
 						}
 					}
@@ -390,7 +378,6 @@ public class PluginLoader {
 			}
 		}
 		catch (Exception exc) {
-			Logger.log(exc.getMessage());
 			exc.printStackTrace();
 		}
 	}

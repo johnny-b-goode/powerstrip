@@ -273,7 +273,6 @@ public final class DataLayer {
 					}
 				}
 			} catch(Exception exc){
-				Logger.log(exc.getMessage());
 				exc.printStackTrace();
 			}
 		}
