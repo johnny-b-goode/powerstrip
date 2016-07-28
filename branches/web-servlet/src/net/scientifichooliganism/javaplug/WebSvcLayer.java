@@ -6,9 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
+import java.io.*;
 import java.nio.CharBuffer;
 import java.util.Map;
 
@@ -48,16 +46,19 @@ public final class WebSvcLayer extends HttpServlet {
             System.out.println("Content type is " + contentType);
 		} else {
 			try(Reader reader = request.getReader()){
-				char ch;
-				while(contentType == null && (int)(ch = (char)reader.read()) != -1){
-
+				int ch;
+				ch = reader.read();
+				while(contentType == null && ch != -1){
+					System.out.println("Reading content...");
 					// Simplistic method for determining whether our
 					// content is json or xml
-				    if(ch == '"' || ch == '{'){
+				    if((char)ch == '"' || (char)ch == '{'){
 				    	contentType = "json";
 					} else if(ch == '<'){
 						contentType = "xml";
 					}
+
+					ch = reader.read();
 				}
 			}
 		}
@@ -70,12 +71,12 @@ public final class WebSvcLayer extends HttpServlet {
 			String action = null;
 
 			if(pathInfo.length > 2) {
-				plugin = pathInfo[pathInfo.length - 2];
-				action = pathInfo[pathInfo.length - 1];
+				plugin = pathInfo[1];
+				action = pathInfo[2];
 			}
 
-			if(plugin == null || action == null){
-				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Either Plugin or Action not specified in URL.");
+			if(plugin == null){
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Plugin not specified in URL.");
 			}
 
 			System.out.println("request.getPathInfo(): " + request.getPathInfo());
@@ -129,7 +130,35 @@ public final class WebSvcLayer extends HttpServlet {
 
 			}
 			else {
-				result = sendToPlugin(plugin, action, new Object[]{});
+			    String[] actionInfo = ac.findAction(plugin + " " + action);
+				if (actionInfo == null) {
+				    // Assume static page requested, try to open file.
+					System.out.println("attempting static retrieval");
+                    System.out.println("Plugins: ");
+					for(String name : ac.plugins.keySet()){
+						System.out.println(name + " : " + ac.plugins.get(name));
+					}
+                    String pluginPath = ac.plugins.get(plugin);
+                    String requestPath = request.getPathInfo();
+					requestPath = requestPath.substring(requestPath.indexOf("/", 1) + 1);
+					String filePath = pluginPath + "/static/" + requestPath;
+					File requestFile = new File(filePath);
+
+					if(requestFile.exists()){
+						BufferedReader reader = new BufferedReader(new FileReader(requestFile));
+                        String line = null;
+
+						while((line = reader.readLine()) != null){
+							pwResponse.write(line);
+						}
+						reader.close();
+					} else {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
+					}
+
+				} else {
+					result = sendToPlugin(plugin, action, new Object[]{});
+				}
 			}
 
 			if(result != null){

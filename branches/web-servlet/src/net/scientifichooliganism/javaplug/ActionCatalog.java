@@ -1,7 +1,6 @@
 package net.scientifichooliganism.javaplug;
 
 import javafx.util.Pair;
-import net.scientifichooliganism.javaplug.util.Logger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -283,7 +282,7 @@ public final class ActionCatalog {
 
 		for (String[] action : actions) {
 			//System.out.println("	" + action[0]);
-			if (action[0].equals(pluginName)) {
+			if (action[0] != null && action[0].equals(pluginName)) {
 				removeAction(action[0], action[1], action[2]);
 			}
 		}

@@ -312,7 +312,8 @@ public class PluginLoader {
 			Plugins will be configured - being enabled if appropriate
 			*/
 
-			for (String plugin : ac.keySet()) {
+			String[] plugins = (String[])ac.keySet().toArray();
+			for (String plugin : plugins){
 				String path = ac.getPluginPath(plugin);
 				/*This will remove the plugin, all actions associated with it, and
 				whether or not it is enabled and / or a storage plugin.
