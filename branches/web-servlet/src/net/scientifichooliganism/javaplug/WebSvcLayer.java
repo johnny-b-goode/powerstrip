@@ -70,8 +70,10 @@ public final class WebSvcLayer extends HttpServlet {
 			String plugin = null;
 			String action = null;
 
-			if(pathInfo.length > 2) {
+            if(pathInfo.length >= 2 && pathInfo[1] != null) {
 				plugin = pathInfo[1];
+			}
+			if(pathInfo.length >= 3 && pathInfo[2] != null){
 				action = pathInfo[2];
 			}
 
@@ -132,26 +134,50 @@ public final class WebSvcLayer extends HttpServlet {
 			else {
 			    String[] actionInfo = ac.findAction(plugin + " " + action);
 				if (actionInfo == null) {
-				    // Assume static page requested, try to open file.
-					System.out.println("attempting static retrieval");
-                    System.out.println("Plugins: ");
-					for(String name : ac.plugins.keySet()){
-						System.out.println(name + " : " + ac.plugins.get(name));
-					}
                     String pluginPath = ac.plugins.get(plugin);
                     String requestPath = request.getPathInfo();
-					requestPath = requestPath.substring(requestPath.indexOf("/", 1) + 1);
+					System.out.println(requestPath);
+
+                    int index = requestPath.indexOf("/", 1);
+					if(index != -1) {
+						requestPath = requestPath.substring(index + 1);
+					} else {
+						requestPath = "";
+					}
+
 					String filePath = pluginPath + "/static/" + requestPath;
+					System.out.println(filePath);
 					File requestFile = new File(filePath);
 
 					if(requestFile.exists()){
-						BufferedReader reader = new BufferedReader(new FileReader(requestFile));
-                        String line = null;
+					    if(requestFile.isDirectory()) {
+					        File files[] = requestFile.listFiles(new FilenameFilter() {
+								@Override
+								public boolean accept(File dir, String name) {
+									return name.startsWith("index");
+								}
+							});
 
-						while((line = reader.readLine()) != null){
-							pwResponse.write(line);
+							requestFile = null;
+							for(int i = 0; i < files.length && requestFile == null; i++){
+								if(files[i].isFile()){
+									requestFile = files[i];
+								}
+							}
+
+							if(requestFile == null) {
+								response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
+							}
 						}
-						reader.close();
+						try (BufferedReader reader = new BufferedReader(new FileReader(requestFile))) {
+							System.out.println("Max String Length : " + Integer.MAX_VALUE);
+							String line = null;
+
+							while ((line = reader.readLine()) != null) {
+								pwResponse.println(line);
+							}
+							reader.close();
+						}
 					} else {
 						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
 					}
