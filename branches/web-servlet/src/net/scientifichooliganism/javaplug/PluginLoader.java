@@ -312,14 +312,15 @@ public class PluginLoader {
 			Plugins will be configured - being enabled if appropriate
 			*/
 
-			String[] plugins = (String[])ac.keySet().toArray();
-			for (String plugin : plugins){
-				String path = ac.getPluginPath(plugin);
+			Object[] plugins = ac.keySet().toArray();
+			for (Object plugin : plugins){
+			    String pluginString = (String)plugin;
+				String path = ac.getPluginPath(pluginString);
 				/*This will remove the plugin, all actions associated with it, and
 				whether or not it is enabled and / or a storage plugin.
 				*/
-				ac.removePlugin(plugin);
-				ac.addPlugin(plugin, path);
+				ac.removePlugin(pluginString);
+				ac.addPlugin(pluginString, path);
 			}
 
 //			System.out.println("actions:");
@@ -388,6 +389,8 @@ public class PluginLoader {
 		ActionCatalog ac = ActionCatalog.getInstance();
 		DataLayer dl = DataLayer.getInstance();
 		dl.addStore("XMLDataStorePlugin");
+
+		ac.findAction("XMLPlugin objectFromNode");
 		Collection<Configuration> configs = dl.query(ac, "Configuration FROM XMLDataStorePlugin WHERE !(Configuration.Sequence < \"3\") || Configuration.Module == \"Core\" && Configuration.Key == \"seq_length\"");
 
 		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",

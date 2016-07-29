@@ -4,7 +4,6 @@ import net.scientifichooliganism.javaplug.interfaces.*;
 import net.scientifichooliganism.javaplug.query.Query;
 import net.scientifichooliganism.javaplug.query.QueryNode;
 import net.scientifichooliganism.javaplug.query.QueryResolver;
-import net.scientifichooliganism.javaplug.util.Logger;
 import net.scientifichooliganism.javaplug.vo.BaseAction;
 
 import java.lang.reflect.Method;

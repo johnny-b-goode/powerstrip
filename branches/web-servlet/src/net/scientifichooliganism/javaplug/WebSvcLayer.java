@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.CharBuffer;
-import java.util.Map;
+import java.util.*;
 
 public final class WebSvcLayer extends HttpServlet {
 
@@ -33,7 +33,6 @@ public final class WebSvcLayer extends HttpServlet {
 		PrintWriter pwResponse = response.getWriter();
 		String requestType = null;
         String contentType = null;
-		int contentLength = request.getContentLength();
 
 		if(request.getHeader("Accept") != null){
 			requestType = request.getHeader("Accept");
@@ -86,14 +85,14 @@ public final class WebSvcLayer extends HttpServlet {
 			System.out.println("plugin: " + plugin);
 			System.out.println("action: " + action);
 
-			Map parameters = request.getParameterMap();
+			Map<String, String[]> parameters = request.getParameterMap();
 
 			Object result = null;
 			if(plugin.toLowerCase().equals("data")){
 				switch(action.toLowerCase()){
 					case "query":
 						if(parameters.containsKey("query")) {
-							String query = ((String[]) parameters.get("query"))[0];
+							String query = parameters.get("query")[0];
 							result = dl.query(ac, query);
 						} else {
 							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
@@ -103,7 +102,7 @@ public final class WebSvcLayer extends HttpServlet {
 					    String json = null;
 						Object object = null;
 						if(parameters.containsKey("object")){
-							json = ((String[])parameters.get("object"))[0];
+							json = parameters.get("object")[0];
 						} else {
 							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
 						}
@@ -133,6 +132,7 @@ public final class WebSvcLayer extends HttpServlet {
 			}
 			else {
 			    String[] actionInfo = ac.findAction(plugin + " " + action);
+                Map<String, String> paramOptions = getParameterMap(actionInfo, parameters.keySet());
 				if (actionInfo == null) {
                     String pluginPath = ac.plugins.get(plugin);
                     String requestPath = request.getPathInfo();
@@ -183,7 +183,51 @@ public final class WebSvcLayer extends HttpServlet {
 					}
 
 				} else {
-					result = sendToPlugin(plugin, action, new Object[]{});
+					String paramString = (String)((paramOptions.keySet().toArray())[0]);
+				    String[] paramOrder = paramString.split(",");
+                    String methodSig = (String)((paramOptions.keySet().toArray())[0]);
+					System.out.println("Signature: " + methodSig);
+					String typesString = methodSig.substring(methodSig.indexOf("(") + 1, methodSig.lastIndexOf(")"));
+					String[] paramTypes = typesString.split(",");
+                 	Object[] args = new Object[paramOrder.length];
+
+                    for(int i = 0; i < paramOrder.length; i++) {
+                        String param = paramOrder[i];
+                        Class paramClass = null;
+						try {
+							paramClass = Class.forName(paramTypes[i]);
+						} catch (ClassNotFoundException exc){
+							exc.printStackTrace();
+						}
+
+						if(paramClass == null) {
+							throw new RuntimeException("Class type " + paramTypes[i] + "not known");
+                        }
+
+						Object paramObject;
+
+						if(paramClass.isPrimitive()) {
+							paramObject = stringToPrimitive(paramClass.getName(), param);
+						} else if (paramClass.equals(String.class)) {
+							paramObject = param;
+						} else if (parameters.containsKey(param)) {
+
+							if (contentType != null && contentType.contains("xml")) {
+								paramObject = ac.performAction("XMLPlugin",
+										"net.scientifichooliganism.xmlplugin.XMLPlugin",
+										"objectFromString", new Object[]{param});
+							} else {
+								// Assume JSON
+								paramObject = ac.performAction("JSONPlugin",
+										"net.scientifichooliganism.jsonplugin.JSONPlugin",
+										"objectFromJson", new Object[]{param});
+							}
+						} else {
+							paramObject = null;
+						}
+						args[i] = paramObject;
+					}
+					result = sendToPlugin(plugin, action, args);
 				}
 			}
 
@@ -195,6 +239,98 @@ public final class WebSvcLayer extends HttpServlet {
 			exc.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	private Map<String, String> getParameterMap(String[] action, Set<String> givenParameters){
+		System.out.println("WebSvcLayer.getParameterMap(String[], Set<String>)");
+		System.out.println("    Action: ");
+		for(String item : action){
+			System.out.println("        " + item);
+		}
+		System.out.println("    Parameters: ");
+     	for(String parameter : givenParameters){
+     		System.out.println("        " + parameter);
+		}
+
+
+
+		Map<String, String> ret = new TreeMap<>();
+		Map<String, String> mappings = ac.getParameterMap(action);
+		Map<String, Integer> paramScores = new TreeMap<>();
+
+		// Score the parameters based on number of matching parameters
+		// and number of parameters total
+		for(String key : mappings.keySet()){
+			Vector<String> paramOption = new Vector(Arrays.asList(key.split(",")));
+			for(String givenParam : givenParameters){
+			    if(paramOption.contains(givenParam)){
+			    	if(paramScores.containsKey(key)){
+			    		Integer old = paramScores.get(key);
+						paramScores.replace(key, old + 1);
+					} else{
+						paramScores.put(key, 1);
+					}
+				}
+			}
+			if(paramOption.size() == givenParameters.size()){
+				if(paramScores.containsKey(key)){
+					Integer old = paramScores.get(key);
+					paramScores.replace(key, old + 1);
+				} else{
+					paramScores.put(key, 1);
+				}
+			}
+		}
+
+		// return all best scores
+		int max = 0;
+		for(String key : paramScores.keySet()){
+			int score = paramScores.get(key);
+			if(score == max){
+				ret.put(mappings.get(key), key);
+			} else if (score > max){
+				max = score;
+				ret.clear();
+				ret.put(mappings.get(key), key);
+			}
+		}
+
+		return ret;
+	}
+
+	private Object stringToPrimitive(String className, String value){
+		Class klass = null;
+		try{
+			klass = Class.forName(className);
+		} catch (ClassNotFoundException exc){
+			exc.printStackTrace();
+		}
+
+		if(klass != null){
+			if(Boolean.class == klass || Boolean.TYPE == klass) {
+				return Boolean.parseBoolean(value);
+			}
+			if(Byte.class == klass || Byte.TYPE == klass) {
+				return Byte.parseByte(value);
+			}
+			if(Short.class == klass || Short.TYPE == klass) {
+				return Short.parseShort(value);
+			}
+			if(Integer.class == klass || Integer.TYPE == klass) {
+				return Integer.parseInt(value);
+			}
+			if(Long.class == klass || Long.TYPE == klass) {
+				return Long.parseLong(value);
+			}
+			if(Float.class == klass || Float.TYPE == klass) {
+				return Float.parseFloat(value);
+			}
+			if(Double.class == klass || Double.TYPE == klass) {
+				return Double.parseDouble(value);
+			}
+		}
+
+		return null;
 	}
 
 	private Object objectFromContent(Reader content, String contentType, int contentLength){

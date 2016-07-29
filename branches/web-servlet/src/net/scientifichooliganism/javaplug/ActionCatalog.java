@@ -1,7 +1,9 @@
 package net.scientifichooliganism.javaplug;
 
 import javafx.util.Pair;
+import net.scientifichooliganism.javaplug.annotations.Param;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -31,6 +33,7 @@ public final class ActionCatalog {
 	ConcurrentHashMap<String, Boolean> pluginsStorage;
 	ConcurrentHashMap<String, Object> objects;
 	ConcurrentHashMap<String, Method> methods;
+    ConcurrentHashMap<String, String> paramMap;
 
 	/**
 	* The default constructor.
@@ -43,6 +46,7 @@ public final class ActionCatalog {
 			pluginsStorage = new ConcurrentHashMap<String, Boolean>();
 			objects = new ConcurrentHashMap<String, Object>();
 			methods = new ConcurrentHashMap<String, Method>();
+			paramMap = new ConcurrentHashMap<>();
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
@@ -156,6 +160,62 @@ public final class ActionCatalog {
 		//}
 	}
 
+	public Map<String, String> getParameterMap(String[] action){
+	    String className = action[1];
+		String methodName = action[2];
+		Map<String, String> ret = new TreeMap<>();
+
+		// Find mappings if we already have them
+		for(String key : paramMap.keySet()){
+			if(key.contains(methodName)){
+				ret.put(paramMap.get(key), key);
+			}
+		}
+
+		// If we don't have them, add them
+		if(paramMap.size() == 0) {
+			try {
+				Class klass = Class.forName(className);
+				Method methods[] = klass.getMethods();
+
+				for (Method method : methods) {
+					if (method.getName().equals(methodName)) {
+						Annotation[][] methodAnnotations = method.getParameterAnnotations();
+						String paramString = "";
+						String methodSignature = method.getName() + "(";
+
+						for(Class paramType : method.getParameterTypes()){
+							methodSignature += paramType.getName() + ",";
+						}
+
+						methodSignature = methodSignature.substring(0, methodSignature.length() - 1);
+						methodSignature += ")";
+                        System.out.println(methodSignature);
+
+						for(Annotation[] paramAnnotation : methodAnnotations){
+							for(Annotation annotation : paramAnnotation){
+								if(annotation instanceof Param){
+									if(paramString.isEmpty()){
+										paramString = ((Param) annotation).name();
+									} else {
+										paramString += "," + ((Param) annotation).name();
+									}
+								}
+							}
+						}
+
+						ret.put(paramString, methodSignature);
+						paramMap.putIfAbsent(methodSignature, paramString);
+					}
+				}
+			} catch (ClassNotFoundException exc) {
+				exc.printStackTrace();
+			}
+		}
+
+		return ret;
+	}
+
 	/**find an action*/
 	public String[] findAction (String query) throws IllegalArgumentException {
 		if (query == null) {
@@ -168,7 +228,7 @@ public final class ActionCatalog {
 
 //		System.out.println("ActionCatalog.findAction(String, String)");
 		query = query.trim();
-		String ret[] = null;
+		String[] ret = null;
 		String queryMethod = null;
 		String queryClass = null;
 
@@ -209,7 +269,7 @@ public final class ActionCatalog {
 //							System.out.println("	action positively matched");
 							return action;
 						}
-						else if (ret != null) {
+						else if (ret != null){
 							if ((queryClass.contains(ret[0])) && (queryClass.contains(action[1]))) {
 //								System.out.println("	possible match found");
 								ret = action;
@@ -223,6 +283,42 @@ public final class ActionCatalog {
 				}
 			}
 		}
+//
+//		for(String[] action : ret) {
+//		    if(action[3] == null){
+//		    	String className = action[1];
+//				String methodName = action[2];
+//
+//				try{
+//					Class klass = Class.forName(className);
+//					for(Method method : klass.getMethods()){
+//						if (method.getName().equals(methodName)) {
+//							Annotation[][] annotations = method.getParameterAnnotations();
+//							for(Annotation[] annotation : annotations){
+//								Param paramAnnotation = null;
+//							    for(Annotation an : annotation){
+//							    	if(an instanceof Param){
+//										paramAnnotation = (Param)an;
+//									}
+//								}
+//								if(paramAnnotation != null) {
+//									String paramName = paramAnnotation.name();
+//									if (action[3] == null) {
+//										action[3] = paramName;
+//									} else {
+//										action[3] = action[3] + "," + paramName;
+//									}
+//								} else {
+//									action[3] = "null";
+//								}
+//							}
+//						}
+//					}
+//				} catch(ClassNotFoundException exc){
+//					exc.printStackTrace();
+//				}
+//			}
+//		}
 
 		return ret;
 	}
@@ -575,7 +671,7 @@ public final class ActionCatalog {
 				int action = -1;
 
 				for (int i = 0; i < actions.length; i++) {
-//					System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2] + " index: " + i);
+					System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2] + " index: " + i);
 					if ((actions[i][0].equals(pluginName)) && (actions[i][2].equals(methodName))) {
 							action = i;
 					}
