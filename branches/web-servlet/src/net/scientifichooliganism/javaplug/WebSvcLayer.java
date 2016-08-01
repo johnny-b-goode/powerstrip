@@ -27,7 +27,7 @@ public final class WebSvcLayer extends HttpServlet {
 		dl = DataLayer.getInstance();
 	}
 
-	private String checkHeaders(HttpServletRequest request, HttpServletResponse response){
+	public String checkHeaders(HttpServletRequest request, HttpServletResponse response){
 		if(request.getHeader("Accept") != null){
 			String requestType = request.getHeader("Accept");
 			response.setContentType(requestType);
@@ -62,7 +62,7 @@ public final class WebSvcLayer extends HttpServlet {
 		return contentType;
 	}
 
-	private String[] parsePath(HttpServletRequest request){
+	public String[] parsePath(HttpServletRequest request){
 		String[] pathInfo = request.getPathInfo().split("/");
 
 		int infoCount = 0;
@@ -85,7 +85,7 @@ public final class WebSvcLayer extends HttpServlet {
 		return ret;
 	}
 
-	private Object doDataOperation(String action, String contentType, Map<String, Object> parameters, HttpServletResponse response){
+	public Object doDataOperation(String action, String contentType, Map<String, Object> parameters, HttpServletResponse response){
 		Object result = null;
 		try {
 			switch (action.toLowerCase()) {
@@ -144,7 +144,7 @@ public final class WebSvcLayer extends HttpServlet {
 		return null;
 	}
 
-	private Map<String, Object> parseArgs(Map<String, String> stringArgs, String plugin, String action, String contentType) {
+	public Map<String, Object> parseArgs(Map<String, String> stringArgs, String plugin, String action, String contentType) {
 		String[] actionInfo = ac.findAction(plugin + " " + action);
 		Map<String, Object> results = new TreeMap<>();
 
@@ -375,17 +375,17 @@ public final class WebSvcLayer extends HttpServlet {
 		}
 	}
 
-	private String[] parseParamKeys(String paramString){
+	public String[] parseParamKeys(String paramString){
 		return paramString.split(",");
 	}
 
-	private String[] parseArgumentTypes(String methodSignature){
+	public String[] parseArgumentTypes(String methodSignature){
 		String typesString = methodSignature.substring(methodSignature.indexOf("(") + 1, methodSignature.lastIndexOf(")"));
 		String[] paramTypes = typesString.split(",");
 		return paramTypes;
 	}
 
-	private Map<String, String> getParameterMap(String[] action, Set<String> givenParameters){
+	public Map<String, String> getParameterMap(String[] action, Set<String> givenParameters){
 		System.out.println("WebSvcLayer.getParameterMap(String[], Set<String>)");
 		System.out.println("    Action: ");
 		for(String item : action){
@@ -442,7 +442,7 @@ public final class WebSvcLayer extends HttpServlet {
 		return ret;
 	}
 
-	private Object stringToPrimitive(String className, String value){
+	public Object stringToPrimitive(String className, String value){
 		Class klass = null;
 		try{
 			klass = Class.forName(className);
@@ -477,7 +477,7 @@ public final class WebSvcLayer extends HttpServlet {
 		return null;
 	}
 
-	private Object objectFromContent(Reader content, String contentType, int contentLength){
+	public Object objectFromContent(Reader content, String contentType, int contentLength){
 		CharBuffer buffer = CharBuffer.allocate(contentLength);
 		try {
 			content.read(buffer);
@@ -499,7 +499,7 @@ public final class WebSvcLayer extends HttpServlet {
 		return result;
 	}
 
-	private void sendResponse(HttpServletResponse response, Object object, String requestType){
+	public void sendResponse(HttpServletResponse response, Object object, String requestType){
 		String result = null;
 		if (object instanceof String) {
 			result = (String)object;
@@ -528,7 +528,7 @@ public final class WebSvcLayer extends HttpServlet {
 		}
 	}
 
-	private Object sendToPlugin(String plugin, String action, Object[] args){
+	public Object sendToPlugin(String plugin, String action, Object[] args){
 		String[] actionInfo = ac.findAction(plugin + " " + action);
 		return ac.performAction(actionInfo[0], actionInfo[1], actionInfo[2], args);
 	}
