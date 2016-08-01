@@ -12,8 +12,8 @@ import java.util.*;
 
 public final class WebSvcLayer extends HttpServlet {
 
-	private ActionCatalog ac = null;
-	private DataLayer dl = null;
+	public ActionCatalog ac = null;
+	public DataLayer dl = null;
 
 	public WebSvcLayer() {
 		//
