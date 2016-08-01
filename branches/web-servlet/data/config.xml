@@ -1,27 +1,28 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><data>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<data>
     <name>Core</name>
-    <config>
+    <Configuration>
         <module>Core</module>
         <sequence>0</sequence>
         <key>default_store</key>
         <value>XMLDataStorePlugin</value>
-    </config>
-    <config>
+    </Configuration>
+    <Configuration>
         <module>Core</module>
         <sequence>1</sequence>
         <key>lastID</key>
         <value>1</value>
-    </config>
-    <config>
+    </Configuration>
+    <Configuration>
         <module>Core</module>
         <sequence>2</sequence>
         <key>seq_length</key>
         <value>3</value>
-    </config>
-    <config>
+    </Configuration>
+    <Configuration>
         <module>Core</module>
         <sequence>3</sequence>
         <key>shutdown_state</key>
         <value>dirty</value>
-    </config>
-<config><id>2</id><label>//data/config</label><key>lastID</key><module>Core</module><sequence>1</sequence><value>3</value></config></data>
+    </Configuration>
+</data>

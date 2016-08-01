@@ -46,7 +46,7 @@ public final class DataLayer {
 
 	private String getDefaultStore(){
 		if(defaultStore == null) {
-			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration FROM data");
+			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration WHERE Configuration.Module == \"Core\"");
 			for (Configuration config : configs) {
 				if (config.getKey().equals("default_store")) {
 					defaultStore = config.getValue();
