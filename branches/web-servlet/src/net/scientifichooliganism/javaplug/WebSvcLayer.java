@@ -104,10 +104,12 @@ public final class WebSvcLayer extends HttpServlet {
 					}
 					return result;
 				case "persist":
-					System.out.println("    doing persist!");
+					System.out.println("    starting persist!");
 					String json = null;
 					String xml = null;
 					Object object = null;
+
+					System.out.println("    getting string content");
 					if (parameters.containsKey("object")) {
 						if (contentType.contains("xml")) {
 							xml = (String) parameters.get("object");
@@ -118,6 +120,7 @@ public final class WebSvcLayer extends HttpServlet {
 						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
 					}
 
+					System.out.println("    creating object from string");
 					if (json != null) {
 						object = ac.performAction("JSONPlugin",
 								"net.scientifichooliganism.jsonplugin.JSONPlugin",
@@ -130,6 +133,7 @@ public final class WebSvcLayer extends HttpServlet {
 						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No json string found");
 					}
 
+					System.out.println("    persisting object");
 					if (object != null) {
 						dl.persist(object);
 					} else {
