@@ -86,10 +86,16 @@ public final class WebSvcLayer extends HttpServlet {
 	}
 
 	public Object doDataOperation(String action, String contentType, Map<String, Object> parameters, HttpServletResponse response){
+	    System.out.println("doDataOperation()");
+		System.out.println("    parameters are: " );
+		for(String key : parameters.keySet()){
+			System.out.println("        key: " + key + " : " + parameters.get(key));
+		}
 		Object result = null;
 		try {
 			switch (action.toLowerCase()) {
 				case "query":
+					System.out.println("    doing query!");
 					if (parameters.containsKey("query")) {
 						String query = (String) parameters.get("query");
 						result = dl.query(ac, query);
@@ -98,6 +104,7 @@ public final class WebSvcLayer extends HttpServlet {
 					}
 					return result;
 				case "persist":
+					System.out.println("    doing persist!");
 					String json = null;
 					String xml = null;
 					Object object = null;
@@ -131,6 +138,7 @@ public final class WebSvcLayer extends HttpServlet {
 
 					break;
 				case "remove":
+					System.out.println("    doing remove!");
 					throw new NotImplementedException();
 				default:
 					response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for DataLayer.");
@@ -145,8 +153,16 @@ public final class WebSvcLayer extends HttpServlet {
 	}
 
 	public Map<String, Object> parseArgs(Map<String, String> stringArgs, String plugin, String action, String contentType) {
+		System.out.println("paresArgs()");
 		String[] actionInfo = ac.findAction(plugin + " " + action);
 		Map<String, Object> results = new TreeMap<>();
+
+		if (plugin.toLowerCase().equals("data")) {
+		    for(String key : stringArgs.keySet()){
+		    	results.put(key, stringArgs.get(key));
+			}
+			return results;
+		}
 
 		if (actionInfo != null) {
 			Map<String, String> parameterMap = getParameterMap(actionInfo, stringArgs.keySet());
@@ -274,62 +290,13 @@ public final class WebSvcLayer extends HttpServlet {
 	@Override
 	public void doPost (HttpServletRequest request, HttpServletResponse response) throws
 			ServletException, IOException {
-	    System.out.println("doPost(request,response)");
-		String requestType = null;
-		String contentType = null;
-		String plugin = null;
-		String action = null;
-
-		contentType = checkHeaders(request, response);
-		requestType = response.getContentType();
-
-		String[] path = parsePath(request);
-		if(path.length >= 1){
-			plugin = path[0];
-		}
-
-		if(path.length >= 2){
-			action = path[1];
-		}
-
-
-		response.setStatus(HttpServletResponse.SC_OK);
-		if(plugin == null || plugin.isEmpty()){
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Plugin not specified in URL.");
-		}
-
-		Map<String, String> parameterStrings = new TreeMap<>();
-
-		for(String key : request.getParameterMap().keySet()){
-			parameterStrings.put(key, request.getParameterMap().get(key)[0]);
-		}
-
-		Map<String, Object> parameters = parseArgs(parameterStrings, plugin, action, contentType);
-
-		System.out.println("    Parameters recieved are: " );
-		for(String key : parameters.keySet()){
-			System.out.println("        " + key + " : " + parameters.get(key).toString());
-		}
-
-		if(parameters != null){
-		    System.out.println("    Attempting to execute the action");
-			Object result = doAction(plugin, action, contentType, parameters, response);
-
-			if(result != null){
-			    System.out.println("    Attempting to send the response");
-				sendResponse(response, result, requestType);
-			}
-		} else {
-			System.out.println("    Attempting to serve static page");
-			serveStaticPage(plugin, request, response);
-		}
-
-
+	    doGet(request, response);
 	}
 
 	@Override
 	public void doGet (HttpServletRequest request, HttpServletResponse response) throws
 			ServletException, IOException {
+		System.out.println("doGet()");
 		String requestType = null;
 		String contentType = null;
 		String plugin = null;
@@ -356,12 +323,13 @@ public final class WebSvcLayer extends HttpServlet {
 		Map<String, String> parameterStrings = new TreeMap<>();
 
 		for(String key : request.getParameterMap().keySet()){
+			System.out.println("    putting " + key + " with " + request.getParameterMap().get(key)[0]);
 			parameterStrings.put(key, request.getParameterMap().get(key)[0]);
 		}
 
 		Map<String, Object> parameters = parseArgs(parameterStrings, plugin, action, contentType);
 
-		if(parameters != null){
+		if(parameters != null && !plugin.equals("data")){
 
 		} else {
 			serveStaticPage(plugin, request, response);
