@@ -527,8 +527,8 @@ public final class ActionCatalog {
 	libraries to contain minimum configuration. Such plugins do not require any
 	explicit action configuration.*/
 	public boolean isPluginActive (String pluginName) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.isPluginActive(String)");
-		System.out.println("    Calling on: " + pluginName);
+//		System.out.println("ActionCatalog.isPluginActive(String)");
+//		System.out.println("    Calling on: " + pluginName);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("isPluginActive (String) was called with a null string");
 		}
@@ -631,10 +631,10 @@ public final class ActionCatalog {
 	/*I don't need to know the return type because it's not part of the method signature*/
 	public Object performAction(String pluginName, String className, String methodName, Object[] arguments) throws IllegalArgumentException {
 
-		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
-		System.out.println("    plugin: " + pluginName);
-		System.out.println("    class: " + className);
-		System.out.println("    method: " + methodName);
+//		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
+//		System.out.println("    plugin: " + pluginName);
+//		System.out.println("    class: " + className);
+//		System.out.println("    method: " + methodName);
 
 		if (pluginName == null) {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with a null string");
@@ -671,7 +671,7 @@ public final class ActionCatalog {
 				int action = -1;
 
 				for (int i = 0; i < actions.length; i++) {
-					System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2] + " index: " + i);
+//					System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2] + " index: " + i);
 					if ((actions[i][0].equals(pluginName)) && (actions[i][2].equals(methodName))) {
 							action = i;
 					}
@@ -801,8 +801,27 @@ public final class ActionCatalog {
 	// Method takes a Class, and searches its methods for the most-specific
 	// method that fits a given list of arguments.
 	private Method findMethod(Class klass, String methodName, Class args[]){
+	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
+		System.out.println("    Class: " + klass.getName());
+		System.out.println("    Method: " + methodName);
+		System.out.println("    args: ");
+     	for(Class arg : args){
+			System.out.println("        " + arg.getName());
+		}
+
+
 		// Retrieve all methods on class
 		ArrayList<Method> methodList = new ArrayList<Method>(Arrays.asList(klass.getMethods()));
+
+		System.out.println("Searching methods: ");
+		for(Method m : methodList){
+			System.out.println("    " + m.getName());
+            for(Class paramType : m.getParameterTypes()){
+
+            	System.out.println("        " + paramType.getName());
+			}
+
+		}
 
 		// Remove any methods that do not match the method name given
 		methodList.removeIf(m -> !(m.getName().equals(methodName)));

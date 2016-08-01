@@ -228,6 +228,7 @@ public final class DataLayer {
 
 			executorService.shutdown();
 
+            // TODO: add timeout to config, exit method in catch
 			try{
 				executorService.awaitTermination(5, TimeUnit.MINUTES);
 			} catch (InterruptedException exc){

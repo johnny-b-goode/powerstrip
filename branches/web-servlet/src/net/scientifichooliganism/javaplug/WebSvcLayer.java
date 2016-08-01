@@ -24,25 +24,20 @@ public final class WebSvcLayer extends HttpServlet {
 		super.init();
 		PluginLoader.bootstrap(getServletContext().getClassLoader());
 		ac = ActionCatalog.getInstance();
-        dl = DataLayer.getInstance();
+		dl = DataLayer.getInstance();
 	}
 
-	@Override
-	public void doGet (HttpServletRequest request, HttpServletResponse response) throws
-		ServletException, IOException {
-		PrintWriter pwResponse = response.getWriter();
-		String requestType = null;
-        String contentType = null;
-
+	private String checkHeaders(HttpServletRequest request, HttpServletResponse response){
 		if(request.getHeader("Accept") != null){
-			requestType = request.getHeader("Accept");
+			String requestType = request.getHeader("Accept");
 			response.setContentType(requestType);
 			System.out.println("Response type is " + requestType);
 		}
 
+		String contentType = null;
 		if(request.getHeader("Content-Type") != null){
 			contentType = request.getHeader("Content-Type");
-            System.out.println("Content type is " + contentType);
+			System.out.println("Content type is " + contentType);
 		} else {
 			try(Reader reader = request.getReader()){
 				int ch;
@@ -51,8 +46,8 @@ public final class WebSvcLayer extends HttpServlet {
 					System.out.println("Reading content...");
 					// Simplistic method for determining whether our
 					// content is json or xml
-				    if((char)ch == '"' || (char)ch == '{'){
-				    	contentType = "json";
+					if((char)ch == '"' || (char)ch == '{'){
+						contentType = "json";
 					} else if(ch == '<'){
 						contentType = "xml";
 					}
@@ -60,185 +55,334 @@ public final class WebSvcLayer extends HttpServlet {
 					ch = reader.read();
 				}
 			}
+			catch(Exception exc){
+				exc.printStackTrace();
+			}
+		}
+		return contentType;
+	}
+
+	private String[] parsePath(HttpServletRequest request){
+		String[] pathInfo = request.getPathInfo().split("/");
+
+		int infoCount = 0;
+		for(String info : pathInfo){
+			if(info != null && !info.isEmpty()){
+				infoCount++;
+			}
 		}
 
+		String ret[] = new String[infoCount];
 
+		int i = 0;
+		for(String info : pathInfo){
+			if(info != null && !info.isEmpty()){
+				ret[i] = info;
+				i++;
+			}
+		}
+
+		return ret;
+	}
+
+	private Object doDataOperation(String action, String contentType, Map<String, Object> parameters, HttpServletResponse response){
+		Object result = null;
 		try {
-			response.setStatus(HttpServletResponse.SC_OK);
-			String[] pathInfo = request.getPathInfo().split("/");
-			String plugin = null;
-			String action = null;
-
-            if(pathInfo.length >= 2 && pathInfo[1] != null) {
-				plugin = pathInfo[1];
-			}
-			if(pathInfo.length >= 3 && pathInfo[2] != null){
-				action = pathInfo[2];
-			}
-
-			if(plugin == null){
-				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Plugin not specified in URL.");
-			}
-
-			System.out.println("request.getPathInfo(): " + request.getPathInfo());
-			System.out.println("context path: " + request.getContextPath());
-			System.out.println("plugin: " + plugin);
-			System.out.println("action: " + action);
-
-			Map<String, String[]> parameters = request.getParameterMap();
-
-			Object result = null;
-			if(plugin.toLowerCase().equals("data")){
-				switch(action.toLowerCase()){
-					case "query":
-						if(parameters.containsKey("query")) {
-							String query = parameters.get("query")[0];
-							result = dl.query(ac, query);
-						} else {
-							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
-						}
-						break;
-					case "persist":
-					    String json = null;
-						Object object = null;
-						if(parameters.containsKey("object")){
-							json = parameters.get("object")[0];
-						} else {
-							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
-						}
-
-						if(json != null){
-							object = ac.performAction("JSONPlugin",
-									"net.scientifichooliganism.jsonplugin.JSONPlugin",
-                                    "objectFromJson", new Object[]{json});
-						} else {
-							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No json string found");
-						}
-
-						if(object != null){
-							dl.persist(object);
-						} else {
-							response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not create object from json");
-						}
-
-						break;
-					case "remove":
-					    throw new NotImplementedException();
-					default:
-						response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for " + plugin + ".");
-						break;
-				}
-
-			}
-			else {
-			    String[] actionInfo = ac.findAction(plugin + " " + action);
-                Map<String, String> paramOptions = getParameterMap(actionInfo, parameters.keySet());
-				if (actionInfo == null) {
-                    String pluginPath = ac.plugins.get(plugin);
-                    String requestPath = request.getPathInfo();
-					System.out.println(requestPath);
-
-                    int index = requestPath.indexOf("/", 1);
-					if(index != -1) {
-						requestPath = requestPath.substring(index + 1);
+			switch (action.toLowerCase()) {
+				case "query":
+					if (parameters.containsKey("query")) {
+						String query = (String) parameters.get("query");
+						result = dl.query(ac, query);
 					} else {
-						requestPath = "";
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query specified");
 					}
-
-					String filePath = pluginPath + "/static/" + requestPath;
-					System.out.println(filePath);
-					File requestFile = new File(filePath);
-
-					if(requestFile.exists()){
-					    if(requestFile.isDirectory()) {
-					        File files[] = requestFile.listFiles(new FilenameFilter() {
-								@Override
-								public boolean accept(File dir, String name) {
-									return name.startsWith("index");
-								}
-							});
-
-							requestFile = null;
-							for(int i = 0; i < files.length && requestFile == null; i++){
-								if(files[i].isFile()){
-									requestFile = files[i];
-								}
-							}
-
-							if(requestFile == null) {
-								response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
-							}
-						}
-						try (BufferedReader reader = new BufferedReader(new FileReader(requestFile))) {
-							System.out.println("Max String Length : " + Integer.MAX_VALUE);
-							String line = null;
-
-							while ((line = reader.readLine()) != null) {
-								pwResponse.println(line);
-							}
-							reader.close();
+					return result;
+				case "persist":
+					String json = null;
+					String xml = null;
+					Object object = null;
+					if (parameters.containsKey("object")) {
+						if (contentType.contains("xml")) {
+							xml = (String) parameters.get("object");
+						} else {
+							json = (String) parameters.get("object");
 						}
 					} else {
-						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
 					}
 
-				} else {
-					String paramString = (String)((paramOptions.keySet().toArray())[0]);
-				    String[] paramOrder = paramString.split(",");
-                    String methodSig = (String)((paramOptions.keySet().toArray())[0]);
-					System.out.println("Signature: " + methodSig);
-					String typesString = methodSig.substring(methodSig.indexOf("(") + 1, methodSig.lastIndexOf(")"));
-					String[] paramTypes = typesString.split(",");
-                 	Object[] args = new Object[paramOrder.length];
-
-                    for(int i = 0; i < paramOrder.length; i++) {
-                        String param = paramOrder[i];
-                        Class paramClass = null;
-						try {
-							paramClass = Class.forName(paramTypes[i]);
-						} catch (ClassNotFoundException exc){
-							exc.printStackTrace();
-						}
-
-						if(paramClass == null) {
-							throw new RuntimeException("Class type " + paramTypes[i] + "not known");
-                        }
-
-						Object paramObject;
-
-						if(paramClass.isPrimitive()) {
-							paramObject = stringToPrimitive(paramClass.getName(), param);
-						} else if (paramClass.equals(String.class)) {
-							paramObject = param;
-						} else if (parameters.containsKey(param)) {
-
-							if (contentType != null && contentType.contains("xml")) {
-								paramObject = ac.performAction("XMLPlugin",
-										"net.scientifichooliganism.xmlplugin.XMLPlugin",
-										"objectFromString", new Object[]{param});
-							} else {
-								// Assume JSON
-								paramObject = ac.performAction("JSONPlugin",
-										"net.scientifichooliganism.jsonplugin.JSONPlugin",
-										"objectFromJson", new Object[]{param});
-							}
-						} else {
-							paramObject = null;
-						}
-						args[i] = paramObject;
+					if (json != null) {
+						object = ac.performAction("JSONPlugin",
+								"net.scientifichooliganism.jsonplugin.JSONPlugin",
+								"objectFromJson", new Object[]{json});
+					} else if(xml != null){
+						object = ac.performAction("XMLPlugin",
+								"net.scientifichooliganism.xmlplugin.XMLPlugin",
+								"objectFromString", new Object[]{xml});
+					} else {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No json string found");
 					}
-					result = sendToPlugin(plugin, action, args);
-				}
-			}
 
-			if(result != null){
-				sendResponse(response, result, requestType);
+					if (object != null) {
+						dl.persist(object);
+					} else {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not create object from json");
+					}
+
+					break;
+				case "remove":
+					throw new NotImplementedException();
+				default:
+					response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for DataLayer.");
+					break;
 			}
-		}
-		catch (Exception exc) {
+		} catch (IOException exc){
 			exc.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+
+		return null;
+	}
+
+	private Map<String, Object> parseArgs(Map<String, String> stringArgs, String plugin, String action, String contentType) {
+		String[] actionInfo = ac.findAction(plugin + " " + action);
+		Map<String, Object> results = new TreeMap<>();
+
+		if (actionInfo != null) {
+			Map<String, String> parameterMap = getParameterMap(actionInfo, stringArgs.keySet());
+			// Parse out param types
+			String[] paramKeys = parseParamKeys((String) parameterMap.keySet().toArray()[0]);
+			String[] argTypes = parseArgumentTypes((String) parameterMap.values().toArray()[0]);
+
+			for (int i = 0; i < paramKeys.length; i++) {
+				String param = paramKeys[i];
+				Class paramClass = null;
+				try {
+					paramClass = Class.forName(argTypes[i]);
+				} catch (ClassNotFoundException exc) {
+					exc.printStackTrace();
+				}
+
+				if (paramClass == null) {
+					throw new RuntimeException("Class type " + argTypes[i] + "not known");
+				}
+
+				Object paramObject;
+
+				if (paramClass.isPrimitive()) {
+					paramObject = stringToPrimitive(paramClass.getName(), param);
+				} else if (paramClass.equals(String.class)) {
+					paramObject = param;
+				} else if (stringArgs.containsKey(param)) {
+
+					if (contentType != null && contentType.contains("xml")) {
+						paramObject = ac.performAction("XMLPlugin",
+								"net.scientifichooliganism.xmlplugin.XMLPlugin",
+								"objectFromString", new Object[]{stringArgs.get(param)});
+					} else {
+						// Assume JSON
+						paramObject = ac.performAction("JSONPlugin",
+								"net.scientifichooliganism.jsonplugin.JSONPlugin",
+								"objectFromJson", new Object[]{stringArgs.get(param)});
+					}
+				} else {
+					paramObject = null;
+				}
+
+				results.put(param, paramObject);
+			}
+		} else {
+			return null;
+		}
+
+		return results;
+	}
+
+	public void serveStaticPage(String plugin, HttpServletRequest request, HttpServletResponse response) {
+		try {
+			String pluginPath = ac.plugins.get(plugin);
+			String requestPath = request.getPathInfo();
+			PrintWriter pwResponse = response.getWriter();
+			System.out.println(requestPath);
+
+			int index = requestPath.indexOf("/", 1);
+			if (index != -1) {
+				requestPath = requestPath.substring(index + 1);
+			} else {
+				requestPath = "";
+			}
+
+			String filePath = pluginPath + "/static/" + requestPath;
+//					System.out.println(filePath);
+			File requestFile = new File(filePath);
+
+			if (requestFile.exists()) {
+				if (requestFile.isDirectory()) {
+					File files[] = requestFile.listFiles(new FilenameFilter() {
+						@Override
+						public boolean accept(File dir, String name) {
+							return name.startsWith("index");
+						}
+					});
+
+					requestFile = null;
+					for (int i = 0; i < files.length && requestFile == null; i++) {
+						if (files[i].isFile()) {
+							requestFile = files[i];
+						}
+					}
+
+					if (requestFile == null) {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
+					}
+				}
+				try (BufferedReader reader = new BufferedReader(new FileReader(requestFile))) {
+					System.out.println("Max String Length : " + Integer.MAX_VALUE);
+					String line = null;
+
+					while ((line = reader.readLine()) != null) {
+						pwResponse.println(line);
+					}
+					reader.close();
+				} catch (Exception exc) {
+					exc.printStackTrace();
+				}
+			} else {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
+			}
+		} catch (Exception exc) {
+			exc.printStackTrace();
+		}
+	}
+
+	public Object doAction(String plugin, String action, String contentType, Map<String, Object> parameters, HttpServletResponse response) {
+		System.out.println("doAction()");
+		Object result = null;
+		if(plugin.toLowerCase().equals("data")){
+			System.out.println("    Action is data!");
+			result = doDataOperation(action, contentType, parameters, response);
+
+		} else {
+			System.out.println("    Action is " + action + "!");
+			result = sendToPlugin(plugin, action, parameters.values().toArray());
+		}
+
+
+		return result;
+	}
+
+	@Override
+	public void doPost (HttpServletRequest request, HttpServletResponse response) throws
+			ServletException, IOException {
+	    System.out.println("doPost(request,response)");
+		String requestType = null;
+		String contentType = null;
+		String plugin = null;
+		String action = null;
+
+		contentType = checkHeaders(request, response);
+		requestType = response.getContentType();
+
+		String[] path = parsePath(request);
+		if(path.length >= 1){
+			plugin = path[0];
+		}
+
+		if(path.length >= 2){
+			action = path[1];
+		}
+
+
+		response.setStatus(HttpServletResponse.SC_OK);
+		if(plugin == null || plugin.isEmpty()){
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Plugin not specified in URL.");
+		}
+
+		Map<String, String> parameterStrings = new TreeMap<>();
+
+		for(String key : request.getParameterMap().keySet()){
+			parameterStrings.put(key, request.getParameterMap().get(key)[0]);
+		}
+
+		Map<String, Object> parameters = parseArgs(parameterStrings, plugin, action, contentType);
+
+		System.out.println("    Parameters recieved are: " );
+		for(String key : parameters.keySet()){
+			System.out.println("        " + key + " : " + parameters.get(key).toString());
+		}
+
+		if(parameters != null){
+		    System.out.println("    Attempting to execute the action");
+			Object result = doAction(plugin, action, contentType, parameters, response);
+
+			if(result != null){
+			    System.out.println("    Attempting to send the response");
+				sendResponse(response, result, requestType);
+			}
+		} else {
+			System.out.println("    Attempting to serve static page");
+			serveStaticPage(plugin, request, response);
+		}
+
+
+	}
+
+	@Override
+	public void doGet (HttpServletRequest request, HttpServletResponse response) throws
+			ServletException, IOException {
+		String requestType = null;
+		String contentType = null;
+		String plugin = null;
+		String action = null;
+
+		contentType = checkHeaders(request, response);
+		requestType = response.getContentType();
+
+		String[] path = parsePath(request);
+		if(path.length >= 1){
+			plugin = path[0];
+		}
+
+		if(path.length >= 2){
+			action = path[1];
+		}
+
+
+		response.setStatus(HttpServletResponse.SC_OK);
+		if(plugin == null || plugin.isEmpty()){
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Plugin not specified in URL.");
+		}
+
+		Map<String, String> parameterStrings = new TreeMap<>();
+
+		for(String key : request.getParameterMap().keySet()){
+			parameterStrings.put(key, request.getParameterMap().get(key)[0]);
+		}
+
+		Map<String, Object> parameters = parseArgs(parameterStrings, plugin, action, contentType);
+
+		if(parameters != null){
+
+		} else {
+			serveStaticPage(plugin, request, response);
+		}
+
+		Object result = doAction(plugin, action, contentType, parameters, response);
+
+
+		if(result != null){
+			sendResponse(response, result, requestType);
+		}
+	}
+
+	private String[] parseParamKeys(String paramString){
+		return paramString.split(",");
+	}
+
+	private String[] parseArgumentTypes(String methodSignature){
+		String typesString = methodSignature.substring(methodSignature.indexOf("(") + 1, methodSignature.lastIndexOf(")"));
+		String[] paramTypes = typesString.split(",");
+		return paramTypes;
 	}
 
 	private Map<String, String> getParameterMap(String[] action, Set<String> givenParameters){
@@ -248,8 +392,8 @@ public final class WebSvcLayer extends HttpServlet {
 			System.out.println("        " + item);
 		}
 		System.out.println("    Parameters: ");
-     	for(String parameter : givenParameters){
-     		System.out.println("        " + parameter);
+		for(String parameter : givenParameters){
+			System.out.println("        " + parameter);
 		}
 
 
@@ -263,9 +407,9 @@ public final class WebSvcLayer extends HttpServlet {
 		for(String key : mappings.keySet()){
 			Vector<String> paramOption = new Vector(Arrays.asList(key.split(",")));
 			for(String givenParam : givenParameters){
-			    if(paramOption.contains(givenParam)){
-			    	if(paramScores.containsKey(key)){
-			    		Integer old = paramScores.get(key);
+				if(paramOption.contains(givenParam)){
+					if(paramScores.containsKey(key)){
+						Integer old = paramScores.get(key);
 						paramScores.replace(key, old + 1);
 					} else{
 						paramScores.put(key, 1);
@@ -360,7 +504,7 @@ public final class WebSvcLayer extends HttpServlet {
 		if (object instanceof String) {
 			result = (String)object;
 		} else {
-		    if(requestType != null && requestType.toLowerCase().contains("xml")){
+			if(requestType != null && requestType.toLowerCase().contains("xml")){
 				result = (String)ac.performAction("XMLPlugin",
 						"net.scientifichooliganism.xmlplugin.XMLPlugin",
 						"stringFromObject", new Object[]{object});
