@@ -8,7 +8,7 @@ public interface Release extends ValueObject {
     String getDescription();
     void setDescription(String in);
     Date getDueDate();
-    void setDueDate(String in);
+    void setDueDate(Date in);
     Date getReleaseDate();
     void setReleaseDate(Date in);
 }

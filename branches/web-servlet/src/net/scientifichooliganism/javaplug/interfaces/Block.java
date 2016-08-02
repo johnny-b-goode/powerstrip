@@ -4,5 +4,5 @@ public interface Block extends ValueObject{
     String getObjectBlocked();
     void setObjectedBlocked(String in);
     String getInstanceBlocked();
-    void setObjectedBlocked(String in);
+    void setInstanceBlocked(String in);
 }
