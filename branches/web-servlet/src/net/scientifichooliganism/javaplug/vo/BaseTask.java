@@ -1,6 +1,8 @@
 package net.scientifichooliganism.javaplug.vo;
 
 import net.scientifichooliganism.javaplug.interfaces.Task;
+import java.util.Date;
+import java.time.Duration;
 
 public class BaseTask extends BaseValueObject implements Task {
     private String name;

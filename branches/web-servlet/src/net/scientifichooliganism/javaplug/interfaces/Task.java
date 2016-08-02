@@ -9,7 +9,7 @@ public interface Task extends ValueObject {
     void setConcurrent(boolean in);
     boolean getExclusive();
     void setExclusive(boolean in);
-    Duration getScheduledDuration():
+    Duration getScheduledDuration();
     void setScheduledDuration(Duration in);
     Date getStartDate();
     void setStartDate(Date in);
