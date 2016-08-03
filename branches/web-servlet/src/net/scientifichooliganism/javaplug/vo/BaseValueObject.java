@@ -8,12 +8,12 @@ import java.util.Vector;
 public class BaseValueObject implements ValueObject {
 	private String id;
 	private String label;
-	private Collection<MetaData> metadata;
+	private Collection<BaseMetaData> metadata;
 
 	public BaseValueObject() {
 		id = null;
 		label = null;
-		metadata = new Vector<MetaData>();
+		metadata = new Vector<BaseMetaData>();
 	}
 
 	public String getID () {
@@ -45,16 +45,16 @@ public class BaseValueObject implements ValueObject {
 		label = in;
 	}
 
-	public Collection<MetaData> getMetaData () {
+	public Collection<BaseMetaData> getMetaData () {
 		return metadata;
 	}
 
-	public void addMetaData (MetaData md) throws IllegalArgumentException {
+	public void addMetaData (BaseMetaData md) throws IllegalArgumentException {
 		removeMetaData(md);
 		metadata.add(md);
 	}
 
-	public void removeMetaData (MetaData md) throws IllegalArgumentException {
+	public void removeMetaData (BaseMetaData md) throws IllegalArgumentException {
 		if (md == null) {
 			throw new IllegalArgumentException("removeMetaData(MetaData) was called with a null object");
 		}
@@ -70,7 +70,7 @@ public class BaseValueObject implements ValueObject {
 		ret = ret + "metadata:\n";
 
 		//TODO: clean up the (lack of) formatting this will cause
-		for (MetaData md : metadata) {
+		for (BaseMetaData md : metadata) {
 			ret = ret + "	" + md.toString();
 		}
 
