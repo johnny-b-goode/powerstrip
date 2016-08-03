@@ -7,6 +7,7 @@
 	<property name="src" value="${basedir}/src" />
 	<property name="lib" value="${basedir}/lib" />
 	<property name="bin" value="${basedir}/bin" />
+	<property name="data" value="${basedir}/data"/>
 	<property name="doc" value="${basedir}/doc" />
 	<property name="jar" value="${basedir}/jar" />
 	<property name="war" value="${basedir}/war" />
@@ -186,6 +187,7 @@
 	<target name="war" depends="clean_war" description="">
 		<war destfile="${war}/${warbasename}${warextension}" webxml="${rsrc}/WEB-INF/web.xml" needxmlfile="true" whenmanifestonly="fail" duplicate="fail">
 			<zipfileset dir="${lib}" includes="**/*.jar" excludes="**/tomcat*" prefix="WEB-INF/lib" />
+			<zipfileset dir="${data}"  prefix="data/" />
 			<zipfileset dir="${jar}" includes="**/*.jar" prefix="WEB-INF/lib" />
 		</war>
 	</target>

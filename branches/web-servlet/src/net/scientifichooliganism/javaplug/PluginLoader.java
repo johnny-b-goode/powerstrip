@@ -167,7 +167,7 @@ public class PluginLoader {
 
 		try {
 			ConcurrentHashMap<String, String> plugins = findPlugins();
-			
+
 			for (String key : plugins.keySet()) {
 //				System.out.println("		key: " + key + ", value: " + String.valueOf(plugins.get(key)));
 				File pluginFile = new File(plugins.get(key));
@@ -286,7 +286,7 @@ public class PluginLoader {
 			for (String plugin : ac.keySet()) {
 				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
-			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"data/config.xml"});
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"../webapps/ROOT/data"});
 
 
 //			System.out.println("Finished Performing actions!");

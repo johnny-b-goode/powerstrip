@@ -42,11 +42,15 @@ public final class DataLayer {
 	}
 
 	private String getDefaultStore(){
+		System.out.println("DataLayer.getDefaultStore()");
 		if(defaultStore == null) {
-			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration WHERE Configuration.Module == \"Core\"");
+			System.out.println("    querying for default store");
+			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration");
+			System.out.println("    found " + configs.size() + " configs");
 			for (Configuration config : configs) {
 				if (config.getKey().equals("default_store")) {
 					defaultStore = config.getValue();
+					System.out.println("    found defaultStore " + defaultStore);
 					//TODO: Look into this. The call to addStore is probably not necessary.
 					addStore(config.getValue());
 				}
@@ -526,35 +530,45 @@ public final class DataLayer {
 	// Method adjusts query object for specific plugin, to ensure proper correlation and
 	// aggregation between data stores
 	private Query translateQuery(Query query){
+		System.out.println("Query.translateQuery(Query)");
+		if (query == null) {
+			throw new RuntimeException("Query.translatedQuery(Query) query is null");
+		}
+
 		Query translatedQuery = new Query(query);
 
-		// If we only have one store to query, then no modification is needed
-		if(query.getFromValues().length != 1){
-			Vector<String> types = new Vector<>();
-            QueryNode tree = query.buildTree();
-            boolean hasRelation = false;
+		if (translatedQuery == null) {
+			throw new RuntimeException("Query.translatedQuery(Query) translatedQuery is null");
+		}
 
-            if(tree != null) {
-				hasRelation = checkRelationGetTypes(tree, types);
-			}
+		if (translatedQuery.getQueryString() != null && !translatedQuery.getQueryString().isEmpty()) {
+			// If we only have one store to query, then no modification is needed
+			if(query.getFromValues() != null && query.getFromValues().length != 1){
+				Vector<String> types = new Vector<>();
+				QueryNode tree = query.buildTree();
+				boolean hasRelation = false;
 
-			if(hasRelation){
-				int numStores = 0;
-				for(int i = 0; i < types.size() && numStores < 2; i++){
-					numStores += resolveQualifiedClassName(types.elementAt(i)).size();
+				if(tree != null) {
+					hasRelation = checkRelationGetTypes(tree, types);
 				}
 
-				//TODO: This does not seem appropriate. Look into this later. - JFT
-				// We now know we are selecting relational data between
-				// multiple data stores, so the entire aggregation and
-				// correlation should happen in the DataLayer, remove query clause
+				if(hasRelation){
+					int numStores = 0;
+					for(int i = 0; i < types.size() && numStores < 2; i++){
+						numStores += resolveQualifiedClassName(types.elementAt(i)).size();
+					}
 
-				if(numStores > 1){
-					translatedQuery.setWherePrefix(null);
+					//TODO: This does not seem appropriate. Look into this later. - JFT
+					// We now know we are selecting relational data between
+					// multiple data stores, so the entire aggregation and
+					// correlation should happen in the DataLayer, remove query clause
+
+					if(numStores > 1){
+						translatedQuery.setWherePrefix(null);
+					}
 				}
 			}
 		}
-
 		return translatedQuery;
 	}
 
@@ -601,6 +615,7 @@ public final class DataLayer {
 	}
 
 	public void persist (Object obj) throws IllegalArgumentException {
+		System.out.println("DataLayer.persist(Object)");
 		if (obj == null) {
 			throw new IllegalArgumentException("persist(Object) was called with a null object");
 		}
@@ -642,7 +657,9 @@ public final class DataLayer {
 
 			// Clear off plugin part of label, will rebuild on way back out of storage location
 			vo.setLabel(vo.getLabel().replace(store + "|", ""));
+			System.out.println("    Finish persisting on store " + store);
 			persist(store, obj);
+			System.out.println("    Finish persisting on store " + store);
 		}
 	}
 
