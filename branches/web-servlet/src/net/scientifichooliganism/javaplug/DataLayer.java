@@ -3,7 +3,6 @@ package net.scientifichooliganism.javaplug;
 import net.scientifichooliganism.javaplug.interfaces.*;
 import net.scientifichooliganism.javaplug.query.Query;
 import net.scientifichooliganism.javaplug.query.QueryNode;
-import net.scientifichooliganism.javaplug.query.QueryResolver;
 import net.scientifichooliganism.javaplug.vo.BaseAction;
 
 import java.lang.reflect.Method;
@@ -16,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 public final class DataLayer {
 	private static DataLayer instance;
-	private QueryResolver queryResolver;
 	private Vector<String> stores;
 	private Map<String, Vector<String>> storeMap;
 	private boolean configuringId = false;
@@ -33,7 +31,6 @@ public final class DataLayer {
 		stores = new Vector<>();
 		defaultStore = null;
 		storeMap = new TreeMap<>();
-		queryResolver = QueryResolver.getInstance();
 	}
 
 	public static DataLayer getInstance () {
@@ -50,6 +47,7 @@ public final class DataLayer {
 			for (Configuration config : configs) {
 				if (config.getKey().equals("default_store")) {
 					defaultStore = config.getValue();
+					//TODO: Look into this. The call to addStore is probably not necessary.
 					addStore(config.getValue());
 				}
 			}
@@ -175,7 +173,6 @@ public final class DataLayer {
 
 	public Collection query (ActionCatalog ac, String queryStr) throws IllegalArgumentException, RuntimeException {
 //		System.out.println("DataLayer.query(ActionCatalog, String)");
-		final CopyOnWriteArrayList results = new CopyOnWriteArrayList();
 
 		if (ac == null) {
 			throw new RuntimeException("query(ActionCatalog, String) ActionCatalog is null");
@@ -185,20 +182,20 @@ public final class DataLayer {
 			throw new RuntimeException("query(ActionCatalog, String) stores is null");
 		}
 
-		validateQuery(queryStr);
-
-
+		final CopyOnWriteArrayList results = new CopyOnWriteArrayList();
 		// Query translation for plugins
-		Query query = null;
+		Query query = new Query(queryStr);
 		final Query translatedQuery = new Query();
+
+		//TODO: This will always strip the WHERE clause - fix
 		try {
-			query = queryResolver.resolve(queryStr);
 			translatedQuery.copy(translateQuery(query));
 		} catch (Exception exc){
 			exc.printStackTrace();
 		}
 
 		if (stores.size() <= 0) {
+			//TODO: It is probably not appropriate to use queryWithoutStores here
 		    results.addAll(queryWithoutStores(ac, translatedQuery));
 		} else {
 
@@ -261,8 +258,6 @@ public final class DataLayer {
 //			System.out.println("		" + action[0]);
 //			System.out.println("		" + action[1]);
 //			System.out.println("		" + action[2]);
-
-
 
 			ret = (Vector)ac.performAction(action[0], action[1], action[2], new Object[]{query});
 
@@ -526,6 +521,8 @@ public final class DataLayer {
 		return ret;
 	}
 
+	//TODO: Modify this method to take a plugin or plugin name as a second argument
+	//TODO: Determine whether or not to move this elsewhere
 	// Method adjusts query object for specific plugin, to ensure proper correlation and
 	// aggregation between data stores
 	private Query translateQuery(Query query){
@@ -536,18 +533,22 @@ public final class DataLayer {
 			Vector<String> types = new Vector<>();
             QueryNode tree = query.buildTree();
             boolean hasRelation = false;
+
             if(tree != null) {
-				hasRelation = checkRelationGetTypes(query.buildTree(), types);
+				hasRelation = checkRelationGetTypes(tree, types);
 			}
+
 			if(hasRelation){
 				int numStores = 0;
 				for(int i = 0; i < types.size() && numStores < 2; i++){
 					numStores += resolveQualifiedClassName(types.elementAt(i)).size();
 				}
 
+				//TODO: This does not seem appropriate. Look into this later. - JFT
 				// We now know we are selecting relational data between
 				// multiple data stores, so the entire aggregation and
 				// correlation should happen in the DataLayer, remove query clause
+
 				if(numStores > 1){
 					translatedQuery.setWherePrefix(null);
 				}
@@ -597,16 +598,6 @@ public final class DataLayer {
 		}
 
 		return ret;
-	}
-
-	public void validateQuery (String query) throws IllegalArgumentException {
-		if (query == null) {
-			throw new IllegalArgumentException("validateQuery(String) String is null");
-		}
-
-		if (query.trim().length() <= 0) {
-			throw new IllegalArgumentException("validateQuery(String) String is empty");
-		}
 	}
 
 	public void persist (Object obj) throws IllegalArgumentException {

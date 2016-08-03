@@ -8,30 +8,23 @@ public class BaseEnvironment extends BaseValueObject implements Environment{
 
 	public BaseEnvironment() {
 		super();
+		name = null;
+		description = null;
 	}
 
-	public static void main (String [] args) {
-		try {
-			//
-		}
-		catch (Exception exc) {
-			exc.printStackTrace();
-		}
-	}
-
-	String getName() {
+	public String getName() {
 		return name;
 	}
 
-    void setName(String in) {
+    public void setName(String in) {
     	name = in;
 	}
 
-    String getDescription() {
+    public String getDescription() {
 		return description;
 	}
 
-    void setDescription(String in) {
+    public void setDescription(String in) {
     	description = in;
 	}
 }

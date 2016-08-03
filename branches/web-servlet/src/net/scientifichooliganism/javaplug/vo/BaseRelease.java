@@ -4,62 +4,58 @@ import net.scientifichooliganism.javaplug.interfaces.Release;
 import java.util.Date;
 
 public class BaseRelease extends BaseValueObject implements Release{
-    private String application;
-    private String name;
-    private String description;
-    private Date dueDate;
-    private Date releaseDate;
+	private String application;
+	private String name;
+	private String description;
+	private Date dueDate;
+	private Date releaseDate;
 
 	public BaseRelease() {
 		super();
+		application = null;
+		name = null;
+		description = null;
+		dueDate = null;
+		releaseDate = null;
 	}
 
-	public static void main (String [] args) {
-		try {
-			//
-		}
-		catch (Exception exc) {
-			exc.printStackTrace();
-		}
+	public String getApplication() {
+		return application;
 	}
 
-    String getApplication() {
-        return application;
-    }
+	public void setApplication(String in) {
+		application = in;
+	}
 
-    void setApplication(String in) {
-        application = in;
-    }
+	public String getName() {
+		return name;
+	}
 
-    String getName() {
-        return name;
-    }
+	public void setName(String in) {
+		name = in;
+	}
 
-    void setName(String in) {
-        name = in;
-    }
+	public String getDescription() {
+		return description;
+	}
 
-    String getDescription() {
-        return description;
-    }
+	public void setDescription(String in) {
+		description = in;
+	}
 
-    void setDescription(String in) {
-        description = in;
-    }
+	public Date getDueDate() {
+		return dueDate;
+	}
 
-    Date getDueDate() {
-        return dueDate;
-    }
+	public void setDueDate(Date in) {
+		dueDate = in;
+	}
 
-    void setDueDate(Date in) {
-        dueDate = in;
-    }
+	public Date getReleaseDate() {
+		return releaseDate;
+	}
 
-    Date getReleaseDate() {
-        return releaseDate;
-    }
-
-    void setReleaseDate(Date in) {
-        releaseDate = in;
-    }
+	public void setReleaseDate(Date in) {
+		releaseDate = in;
+	}
 }

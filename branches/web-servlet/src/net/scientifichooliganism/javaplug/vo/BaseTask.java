@@ -5,78 +5,78 @@ import java.util.Date;
 import java.time.Duration;
 
 public class BaseTask extends BaseValueObject implements Task {
-    private String name;
-    private String description;
-    private boolean concurrent;
-    private boolean exclusive;
-    private Duration scheduledDuration;
-    private Date startDate;
-    private Date completedDate;
+	private String name;
+	private String description;
+	private boolean concurrent;
+	private boolean exclusive;
+	private Duration scheduledDuration;
+	private Date startDate;
+	private Date completedDate;
 
 	public BaseTask() {
 		super();
+		name = null;
+		description = null;
+		concurrent = false;
+		exclusive = false;
+		scheduledDuration = null;
+		startDate = null;
+		completedDate = null;
 	}
 
-	public static void main (String [] args) {
-		try {
-			//
-		}
-		catch (Exception exc) {
-			exc.printStackTrace();
-		}
+	public String getName() {
+		return name;
 	}
 
-    String getName() {
-        return name;
-    }
+	public void setName(String in) {
+		name = in;
+	}
 
-    void setName(String in) {
-        name = in;
-    }
+	public String getDescription() {
+		return description;
+	}
 
-    String getDescription() {
-        return description;
-    }
+	public void setDescription(String in) {
+		description = in;
+	}
 
-    void setDescription(String in) {
-        description = in;
-    }
+	public boolean getConcurrent() {
+		return concurrent;
+	}
 
-    boolean getConcurrent() {
-        return concurrent;
-    }
+	public void setConcurrent(boolean in) {
+		concurrent = in;
+	}
 
-    void setConcurrent(boolean in) {
-        concurrent = in;
-    }
+	public boolean getExclusive() {
+		return exclusive;
+	}
 
-    boolean getExclusive() {
-        return exclusive;
-    }
+	public void setExclusive(boolean in) {
+		exclusive = in;
+	}
 
-    void setExclusive(boolean in) {
-        exclusive = in;
-    }
+	public Duration getScheduledDuration() {
+		return scheduledDuration;
+	}
 
-    Duration getScheduledDuration() {
-        return scheduledDuration;
-    }
-    void setScheduledDuration(Duration in) {
-        scheduledDuration = in;
-    }
+	public void setScheduledDuration(Duration in) {
+		scheduledDuration = in;
+	}
 
-    Date getStartDate() {
-        return startDate;
-    }
-    void setStartDate(Date in) {
-        startDate = in;
-    }
+	public Date getStartDate() {
+		return startDate;
+	}
 
-    Date getCompletedDate() {
-        return completedDate;
-    }
+	public void setStartDate(Date in) {
+		startDate = in;
+	}
 
-    void setCompletedDate(Date in) {
-        completedDate = in;
-    }
+	public Date getCompletedDate() {
+		return completedDate;
+	}
+
+	public void setCompletedDate(Date in) {
+		completedDate = in;
+	}
 }
