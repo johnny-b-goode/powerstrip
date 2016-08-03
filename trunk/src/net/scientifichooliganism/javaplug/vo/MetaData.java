@@ -48,7 +48,30 @@ public class MetaData extends ValueObject {
 		}
 	}
 
-	public String toString() {
+	//an idea I was toying with
+	/*
+	public void attach (ValueObject vo) throws IllegalArgumentException, RuntimeException {
+		if (vo == null) {
+			throw new IllegalArgumentException("attach(ValueObject) was called with a null ValueObject");
+		}
+
+		if (((getKey() == null) || (getKey().length() <= 0)) && ((getValue() == null) || (getValue().length() <= 0))) {
+			throw new RuntimeException("attach(ValueObject) was called before the key or value was set for the MetaData object.");
+		}
+
+		if ((getObject() == null) || (getObject().length() <= 0)) {
+			setObject(vo.getClass().getName());
+		}
+
+		if ((getObjectID() == null) || (getObjectID().length() <= 0)) {
+			setObjectID(vo.getID());
+		}
+
+		vo.addMetaData(this);
+	}
+	*/
+
+	public String toString () {
 		String ret = super.toString();
 		ret = ret + "object: " + String.valueOf(object) + "\n";
 		ret = ret + "objectID: " + String.valueOf(objectID) + "\n";
@@ -58,11 +81,11 @@ public class MetaData extends ValueObject {
 		return ret;
 	}
 
-	public String getObject() {
+	public String getObject () {
 		return object;
 	}
 
-	public void setObject(String in) throws IllegalArgumentException {
+	public void setObject (String in) throws IllegalArgumentException {
 		if (in == null) {
 			throw new IllegalArgumentException("setObject(String) was called with a null string");
 		}
@@ -74,11 +97,11 @@ public class MetaData extends ValueObject {
 		object = in;
 	}
 
-	public String getObjectID() {
+	public String getObjectID () {
 		return objectID;
 	}
 
-	public void setObjectID(String in) throws IllegalArgumentException {
+	public void setObjectID (String in) throws IllegalArgumentException {
 		if (in == null) {
 			throw new IllegalArgumentException("setObjectID(String) was called with a null string");
 		}
