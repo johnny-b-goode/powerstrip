@@ -77,7 +77,7 @@ public final class DataLayer {
 
 			dl.persist(action);
 
-			Collection actions = dl.query("Action FROM data");
+			Collection actions = dl.query("Action");
 
 			Action changeAction = (Action)actions.iterator().next();
 			changeAction.setName("NEW NAME!!");
@@ -92,7 +92,7 @@ public final class DataLayer {
 	private void configureLastID(){
 		if (!configuringId && (lastId == null || sequenceReset == -1 || shutdownStatus == null)) {
 			configuringId = true;
-			Vector<Configuration> configs = (Vector<Configuration>) query("config FROM data");
+			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration");
 			boolean dirtyStartup = false;
 			for (Configuration config : configs) {
 				if (config.getKey().equals("lastID")) {
