@@ -2,6 +2,8 @@ package net.scientifichooliganism.javaplug;
 
 import net.scientifichooliganism.javaplug.interfaces.Action;
 import net.scientifichooliganism.javaplug.interfaces.Configuration;
+import net.scientifichooliganism.javaplug.interfaces.Task;
+import net.scientifichooliganism.javaplug.vo.BaseTask;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -286,7 +288,7 @@ public class PluginLoader {
 			for (String plugin : ac.keySet()) {
 				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
-			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"../webapps/ROOT/data"});
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"./data/"});
 
 
 //			System.out.println("Finished Performing actions!");
@@ -391,7 +393,13 @@ public class PluginLoader {
 		dl.addStore("XMLDataStorePlugin");
 
 		ac.findAction("XMLPlugin objectFromNode");
-		Collection<Configuration> configs = dl.query(ac, "Configuration FROM XMLDataStorePlugin WHERE !(Configuration.Sequence < \"3\") || Configuration.Module == \"Core\" && Configuration.Key == \"seq_length\"");
+		Collection<Configuration> configs = dl.query(ac, "Configuration WHERE Configuration.Key == \"shutdown_state\"");
+
+		Task task = new BaseTask();
+		task.setName("Testing Task");
+		task.setDescription("A task to test persistence!");
+
+		dl.persist(task);
 
 		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",
 					"net.scientifichooliganism.jsonplugin.JSONPlugin",

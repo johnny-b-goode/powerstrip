@@ -334,7 +334,7 @@ public final class WebSvcLayer extends HttpServlet {
 		Map<String, Object> parameters = parseArgs(parameterStrings, plugin, action, contentType);
 
         Object result = null;
-		if(parameters != null && !plugin.equals("data")){
+		if(parameters != null){
 			result = doAction(plugin, action, contentType, parameters, response);
 		} else {
 			serveStaticPage(plugin, request, response);

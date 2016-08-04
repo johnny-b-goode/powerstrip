@@ -21,7 +21,7 @@ public class Query {
 	
 
 	public Query () {
-		this("");
+		this("Configuration");
 	}
 
 	public Query (String queryString) {
@@ -37,6 +37,7 @@ public class Query {
 		setQueryString(query.getQueryString());
 		setSelectValues(query.getSelectValues());
 		setFromValues(query.getFromValues());
+		setWhereString(query.getWhereString());
 		setWherePrefix(query.getWherePrefix());
 	}
 

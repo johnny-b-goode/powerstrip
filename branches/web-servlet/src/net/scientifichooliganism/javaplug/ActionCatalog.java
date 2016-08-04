@@ -801,27 +801,27 @@ public final class ActionCatalog {
 	// Method takes a Class, and searches its methods for the most-specific
 	// method that fits a given list of arguments.
 	private Method findMethod(Class klass, String methodName, Class args[]){
-	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
-		System.out.println("    Class: " + klass.getName());
-		System.out.println("    Method: " + methodName);
-		System.out.println("    args: ");
-     	for(Class arg : args){
-			System.out.println("        " + arg.getName());
-		}
+//	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
+//		System.out.println("    Class: " + klass.getName());
+//		System.out.println("    Method: " + methodName);
+//		System.out.println("    args: ");
+//     	for(Class arg : args){
+//			System.out.println("        " + arg.getName());
+//		}
 
 
 		// Retrieve all methods on class
 		ArrayList<Method> methodList = new ArrayList<Method>(Arrays.asList(klass.getMethods()));
 
-		System.out.println("Searching methods: ");
-		for(Method m : methodList){
-			System.out.println("    " + m.getName());
-            for(Class paramType : m.getParameterTypes()){
-
-            	System.out.println("        " + paramType.getName());
-			}
-
-		}
+//		System.out.println("Searching methods: ");
+//		for(Method m : methodList){
+//			System.out.println("    " + m.getName());
+//            for(Class paramType : m.getParameterTypes()){
+//
+//            	System.out.println("        " + paramType.getName());
+//			}
+//
+//		}
 
 		// Remove any methods that do not match the method name given
 		methodList.removeIf(m -> !(m.getName().equals(methodName)));

@@ -52,7 +52,7 @@ public final class DataLayer {
 					defaultStore = config.getValue();
 					System.out.println("    found defaultStore " + defaultStore);
 					//TODO: Look into this. The call to addStore is probably not necessary.
-					addStore(config.getValue());
+//					addStore(config.getValue());
 				}
 			}
 		}
@@ -137,7 +137,7 @@ public final class DataLayer {
 		if (!configuringId && (lastId == null || sequenceReset == -1 || shutdownStatus == null)) {
 			configureLastID();
 		}
-		else if(!configuringId){
+		if(!configuringId){
 			newId = (new BigInteger(lastId.getValue())).add(BigInteger.ONE).toString();
 			lastId.setValue(newId);
 
@@ -147,8 +147,10 @@ public final class DataLayer {
 				shutdownStatus.setValue("clean");
 				persist(lastId);
 				persist(shutdownStatus);
+                shutdownStatus = (Configuration)(query("Configuration WHERE Configuration.Key == \"shutdown_state\"").iterator().next());
 			} else if (sequenceCount == sequenceReset) {
 				shutdownStatus.setValue("dirty");
+				sequenceCount--;
 				persist(shutdownStatus);
 			} else {
 				sequenceCount--;
@@ -205,7 +207,7 @@ public final class DataLayer {
 
 			Vector<String> queryStores = new Vector<>();
 
-			if (translatedQuery.getFromValues().length > 0) {
+			if (translatedQuery.getFromValues() != null && translatedQuery.getFromValues().length > 0) {
 				for (int i = 0; i < translatedQuery.getFromValues().length; i++) {
 					queryStores.add(translatedQuery.getFromValues()[i]);
 				}
@@ -652,7 +654,7 @@ public final class DataLayer {
 			String store = vo.getLabel().split("\\|")[0];
 
 			if(!stores.contains(store)){
-				throw new RuntimeException("persist(Object) was called on an object whose store does not exist");
+				throw new RuntimeException("persist(Object) was called on an object whose store (" + store + ") does not exist");
 			}
 
 			// Clear off plugin part of label, will rebuild on way back out of storage location
