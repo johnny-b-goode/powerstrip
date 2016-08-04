@@ -95,8 +95,8 @@ public final class WebSvcLayer extends HttpServlet {
 		try {
 			switch (action.toLowerCase()) {
 				case "query":
-					System.out.println("    doing query!");
 					if (parameters.containsKey("query")) {
+						System.out.println("    doing query!");
 						String query = (String) parameters.get("query");
 						result = dl.query(ac, query);
 					} else {
@@ -109,19 +109,20 @@ public final class WebSvcLayer extends HttpServlet {
 					String xml = null;
 					Object object = null;
 
-					System.out.println("    getting string content");
 					if (parameters.containsKey("object")) {
+						System.out.println("    getting string content");
 						if (contentType.contains("xml")) {
 							xml = (String) parameters.get("object");
 						} else {
 							json = (String) parameters.get("object");
 						}
 					} else {
+						System.out.println("Sending error - \"No object specified\"");
 						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
 					}
 
-					System.out.println("    creating object from string");
 					if (json != null) {
+						System.out.println("    creating object from string");
 						object = ac.performAction("JSONPlugin",
 								"net.scientifichooliganism.jsonplugin.JSONPlugin",
 								"objectFromJson", new Object[]{json});
@@ -130,13 +131,15 @@ public final class WebSvcLayer extends HttpServlet {
 								"net.scientifichooliganism.xmlplugin.XMLPlugin",
 								"objectFromString", new Object[]{xml});
 					} else {
+						System.out.println("Sending error - \"No json string found \"");
 						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No json string found");
 					}
 
-					System.out.println("    persisting object");
 					if (object != null) {
+						System.out.println("    persisting object");
 						dl.persist(object);
 					} else {
+						System.out.println("Sending error - \"Could not create object from json\"");
 						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not create object from json");
 					}
 

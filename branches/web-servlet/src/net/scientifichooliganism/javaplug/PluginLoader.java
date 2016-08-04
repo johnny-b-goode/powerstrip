@@ -288,7 +288,8 @@ public class PluginLoader {
 			for (String plugin : ac.keySet()) {
 				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
-			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"./data/"});
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"../webapps/ROOT/data/"});
+//			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"data/config.xml"});
 
 
 //			System.out.println("Finished Performing actions!");
@@ -390,7 +391,6 @@ public class PluginLoader {
 		bootstrap();
 		ActionCatalog ac = ActionCatalog.getInstance();
 		DataLayer dl = DataLayer.getInstance();
-		dl.addStore("XMLDataStorePlugin");
 
 		ac.findAction("XMLPlugin objectFromNode");
 		Collection<Configuration> configs = dl.query(ac, "Configuration WHERE Configuration.Key == \"shutdown_state\"");

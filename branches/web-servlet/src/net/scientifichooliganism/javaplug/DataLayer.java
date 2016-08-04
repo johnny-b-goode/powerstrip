@@ -52,7 +52,7 @@ public final class DataLayer {
 					defaultStore = config.getValue();
 					System.out.println("    found defaultStore " + defaultStore);
 					//TODO: Look into this. The call to addStore is probably not necessary.
-//					addStore(config.getValue());
+					addStore(config.getValue());
 				}
 			}
 		}
@@ -97,10 +97,16 @@ public final class DataLayer {
 			for (Configuration config : configs) {
 				if (config.getKey().equals("lastID")) {
 					lastId = config;
+					if(lastId.getID() == null) {
+						lastId.setID("0");
+					}
 				} else if (config.getKey().equals("seq_length")) {
 					sequenceReset = Integer.parseInt(config.getValue());
 				} else if (config.getKey().equals("shutdown_state")) {
 					shutdownStatus = config;
+					if(shutdownStatus.getID() == null) {
+						shutdownStatus.setID("1");
+					}
 					if (config.getValue().equals("dirty")) {
 						dirtyStartup = true;
 					} else {
@@ -146,12 +152,14 @@ public final class DataLayer {
 				sequenceCount = sequenceReset;
 				shutdownStatus.setValue("clean");
 				persist(lastId);
+				lastId = (Configuration)(query("Configuration WHERE Configuration.Key == \"lastID\"").iterator().next());
 				persist(shutdownStatus);
                 shutdownStatus = (Configuration)(query("Configuration WHERE Configuration.Key == \"shutdown_state\"").iterator().next());
 			} else if (sequenceCount == sequenceReset) {
 				shutdownStatus.setValue("dirty");
 				sequenceCount--;
 				persist(shutdownStatus);
+				shutdownStatus = (Configuration)(query("Configuration WHERE Configuration.Key == \"shutdown_state\"").iterator().next());
 			} else {
 				sequenceCount--;
 			}
@@ -654,6 +662,11 @@ public final class DataLayer {
 			String store = vo.getLabel().split("\\|")[0];
 
 			if(!stores.contains(store)){
+				System.out.println("Stores are: ");
+				for(String storeStr : stores){
+					System.out.println(storeStr);
+				}
+
 				throw new RuntimeException("persist(Object) was called on an object whose store (" + store + ") does not exist");
 			}
 
