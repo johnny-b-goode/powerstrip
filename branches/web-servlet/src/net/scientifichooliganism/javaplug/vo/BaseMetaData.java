@@ -141,7 +141,7 @@ public class BaseMetaData extends BaseValueObject implements MetaData {
 			throw new IllegalArgumentException("setKey(String) was called with an empty string");
 		}
 
-		validateObjectSet();
+//		validateObjectSet();
 		key = in;
 		validateKeyValue();
 	}
@@ -155,7 +155,7 @@ public class BaseMetaData extends BaseValueObject implements MetaData {
 			throw new IllegalArgumentException("setValue(String) was called with a null string");
 		}
 
-		validateObjectSet();
+//		validateObjectSet();
 		value = in;
 		validateKeyValue();
 	}

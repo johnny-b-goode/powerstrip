@@ -625,7 +625,7 @@ public final class DataLayer {
 	}
 
 	public void persist (Object obj) throws IllegalArgumentException {
-		System.out.println("DataLayer.persist(Object)");
+//		System.out.println("DataLayer.persist(Object)");
 		if (obj == null) {
 			throw new IllegalArgumentException("persist(Object) was called with a null object");
 		}
@@ -667,11 +667,11 @@ public final class DataLayer {
 					System.out.println(storeStr);
 				}
 
-				throw new RuntimeException("persist(Object) was called on an object whose store (" + store + ") does not exist");
+				throw new IllegalArgumentException("persist(Object) was called on an object whose store (" + store + ") does not exist");
 			}
 
 			// Clear off plugin part of label, will rebuild on way back out of storage location
-			vo.setLabel(vo.getLabel().replace(store + "|", ""));
+			vo.setLabel(vo.getLabel().replaceFirst(store + "|", ""));
 			System.out.println("    Finish persisting on store " + store);
 			persist(store, obj);
 			System.out.println("    Finish persisting on store " + store);
@@ -693,6 +693,51 @@ public final class DataLayer {
 
 		ActionCatalog ac = ActionCatalog.getInstance();
 		String action[] = ac.findAction(store + " persist");
+		ac.performAction(action[0], action[1], action[2], new Object[]{obj});
+	}
+
+	public void remove (Object obj) {
+		if (obj == null){
+			throw new IllegalArgumentException("remove(Object) was called with a null object");
+		}
+
+		ValueObject vo = (ValueObject)obj;
+
+		if (vo.getID() == null) {
+			throw new IllegalArgumentException("remove(Object) called on an object with a null ID");
+		}
+
+		if(vo.getLabel() != null && !vo.getLabel().isEmpty()){
+			String store = vo.getLabel().split("\\|")[0];
+
+			if (!stores.contains(store)) {
+				throw new IllegalArgumentException("remove(Object) called on an object whose store does not exist");
+			}
+
+			vo.setLabel(vo.getLabel().replaceFirst(store + "|", ""));
+            remove(store, vo);
+		} else {
+			for(String store : stores){
+				remove(store, obj);
+			}
+		}
+	}
+
+	public void remove (String store, Object obj) {
+		if (store == null) {
+			throw new IllegalArgumentException("remove(String, Object) was called with a null string");
+		}
+
+		if (store.isEmpty()) {
+			throw new IllegalArgumentException("remove(String, Object) was called with an empty string");
+		}
+
+		if(obj == null){
+			throw new IllegalArgumentException("remove(String, Object) was called with a null object");
+		}
+
+		ActionCatalog ac = ActionCatalog.getInstance();
+        String action[] = ac.findAction(store + " remove");
 		ac.performAction(action[0], action[1], action[2], new Object[]{obj});
 	}
 

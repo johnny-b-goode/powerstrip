@@ -20,8 +20,8 @@
     </configuration>
     <configuration>
         <module>Core</module>
-        <sequence>3</sequence>
+        <sequence>100</sequence>
         <key>shutdown_state</key>
         <value>dirty</value>
     </configuration>
-</data>
+<configuration><id>0</id><label>//configuration</label><key>lastID</key><module>Core</module><sequence>1</sequence><value>2</value></configuration><configuration><id>1</id><label>//configuration</label><key>shutdown_state</key><module>Core</module><sequence>100</sequence><value>clean</value></configuration></data>
