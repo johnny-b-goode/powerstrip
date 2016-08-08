@@ -168,7 +168,9 @@
 				<pathelement path="${tst}" />
 			</classpath>
 			<formatter type="xml" />
-			<test name="net.scientifichooliganism.javaplug.vo.MetaDataTest" todir="${rslt}"/>
+			<!--<test name="net.scientifichooliganism.javaplug.vo.MetaDataTest" todir="${rslt}"/>-->
+			<test name="net.scientifichooliganism.javaplug.vo.ActionTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.ValueObjectTest" todir="${rslt}"/>
 		</junit>
 	</target>
 
