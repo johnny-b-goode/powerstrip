@@ -152,7 +152,6 @@ public final class DataLayer {
 				sequenceCount = sequenceReset;
 				shutdownStatus.setValue("clean");
 				persist(lastId);
-				lastId = (Configuration)(query("Configuration WHERE Configuration.Key == \"lastID\"").iterator().next());
 				persist(shutdownStatus);
                 shutdownStatus = (Configuration)(query("Configuration WHERE Configuration.Key == \"shutdown_state\"").iterator().next());
 			} else if (sequenceCount == sequenceReset) {
