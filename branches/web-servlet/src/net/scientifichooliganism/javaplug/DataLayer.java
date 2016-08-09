@@ -277,7 +277,7 @@ public final class DataLayer {
 			try{
 				if (ret != null && ret.size() > 0) {
 					for (ValueObject obj: ret) {
-						(obj).setLabel(action[0] + "|" + (obj).getLabel());
+						(obj).setLabel(plugin + "|" + (obj).getLabel());
 					}
 				}
 			} catch(Exception exc){
