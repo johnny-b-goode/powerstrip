@@ -306,8 +306,8 @@ public class PluginLoader {
 			for (String plugin : ac.keySet()) {
 				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
-			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"../webapps/ROOT/data/"});
-//			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"data/config.xml"});
+//			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"../webapps/ROOT/data/"});
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"data/config.xml"});
 
 
 //			System.out.println("Finished Performing actions!");
@@ -420,6 +420,12 @@ public class PluginLoader {
 		task.setDescription("A task to test persistence!");
 
 		dl.persist(task);
+
+		Collection tasks = dl.query("Task");
+
+        Object removeObject = tasks.iterator().next();
+
+		dl.remove(removeObject);
 
 		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",
 					"net.scientifichooliganism.jsonplugin.JSONPlugin",

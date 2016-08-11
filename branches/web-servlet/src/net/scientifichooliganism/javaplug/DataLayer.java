@@ -51,8 +51,6 @@ public final class DataLayer {
 				if (config.getKey().equals("default_store")) {
 					defaultStore = config.getValue();
 //					System.out.println("    found defaultStore " + defaultStore);
-					//TODO: Look into this. The call to addStore is probably not necessary.
-					addStore(config.getValue());
 				}
 			}
 		}
@@ -678,10 +676,13 @@ public final class DataLayer {
 			}
 
 			// Clear off plugin part of label, will rebuild on way back out of storage location
-			vo.setLabel(vo.getLabel().replaceFirst(store + "|", ""));
-//			System.out.println("    Finish persisting on store " + store);
+			vo.setLabel(vo.getLabel().replaceFirst(store, ""));
+            if(vo.getLabel().indexOf('|') == 0){
+            	vo.setLabel(vo.getLabel().substring(1));
+			}
+			System.out.println("    Starting persisting on store " + store);
 			persist(store, obj);
-//			System.out.println("    Finish persisting on store " + store);
+			System.out.println("    Finished persisting on store " + store);
 		}
 	}
 
@@ -721,7 +722,10 @@ public final class DataLayer {
 				throw new IllegalArgumentException("remove(Object) called on an object whose store does not exist");
 			}
 
-			vo.setLabel(vo.getLabel().replaceFirst(store + "|", ""));
+			vo.setLabel(vo.getLabel().replaceFirst(store, ""));
+            if(vo.getLabel().indexOf("|") == 0){
+            	vo.setLabel(vo.getLabel().substring(1));
+			}
             remove(store, vo);
 		} else {
 			for(String store : stores){
@@ -767,7 +771,7 @@ public final class DataLayer {
 		}
 
 		if (stores.contains(store)) {
-			throw new IllegalArgumentException("addStore(String) stores already contains an object with the value passed");
+			throw new IllegalArgumentException("addStore(String) stores (" + store + ") already contains an object with the value passed");
 		}
 
 		if (! ac.isPluginStorage(store)) {
