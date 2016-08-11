@@ -190,7 +190,7 @@ public final class ActionCatalog {
 
 						methodSignature = methodSignature.substring(0, methodSignature.length() - 1);
 						methodSignature += ")";
-                        System.out.println(methodSignature);
+//                        System.out.println(methodSignature);
 
 						for(Annotation[] paramAnnotation : methodAnnotations){
 							for(Annotation annotation : paramAnnotation){
@@ -263,27 +263,40 @@ public final class ActionCatalog {
 					return action;
 				}
 				else {
+					//If the first part of the query contains the plugin name OR the class name...
 					if ((queryClass.contains(action[0])) || (queryClass.contains(action[1]))) {
 //						System.out.println("	continuing evaluation...");
+						//If the first part of the query contains the plugin name AND the class name...
 						if ((queryClass.contains(action[0])) && (queryClass.contains(action[1]))) {
 //							System.out.println("	action positively matched");
 							return action;
 						}
-						else if (ret != null){
-							if ((queryClass.contains(ret[0])) && (queryClass.contains(action[1]))) {
-//								System.out.println("	possible match found");
+						//If the first part of the query contains the class name...
+						else if (queryClass.contains(action[1])) {
+							//If a possible candidate has already been selected...
+							if (ret != null) {
+								//If the possible candidate matches on plugin but not class (if it matched on class
+								//and plugin this method would have returned immediately) and the current candidate
+								//matches on class, then prefer the current candidate.
+								if ((queryClass.contains(ret[0])) && (queryClass.contains(action[1]))) {
+									ret = action;
+								}
+							}
+							else {
 								ret = action;
 							}
 						}
-						else {
-//							System.out.println("	possible match found");
-							ret = action;
+						//If the first part of the query contains the plugin name...
+						else if (queryClass.contains(action[0])) {
+							if (ret == null) {
+								ret = action;
+							}
 						}
 					}
 				}
 			}
 		}
-//
+
 //		for(String[] action : ret) {
 //		    if(action[3] == null){
 //		    	String className = action[1];
@@ -630,7 +643,6 @@ public final class ActionCatalog {
 
 	/*I don't need to know the return type because it's not part of the method signature*/
 	public Object performAction(String pluginName, String className, String methodName, Object[] arguments) throws IllegalArgumentException {
-
 //		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
 //		System.out.println("    plugin: " + pluginName);
 //		System.out.println("    class: " + className);
@@ -672,8 +684,9 @@ public final class ActionCatalog {
 
 				for (int i = 0; i < actions.length; i++) {
 //					System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2] + " index: " + i);
-					if ((actions[i][0].equals(pluginName)) && (actions[i][2].equals(methodName))) {
-							action = i;
+					if ((actions[i][0].equals(pluginName)) && (actions[i][1].equals(className)) &&(actions[i][2].equals(methodName))) {
+						action = i;
+						i = actions.length;
 					}
 				}
 
@@ -681,7 +694,7 @@ public final class ActionCatalog {
 					throw new RuntimeException("performAction(String, String, String, Object[]) invalid index in action");
 				}
 
-				String methodKey = actions[action][2] + "(";
+				String methodKey = actions[action][1] + "." + actions[action][2] + "(";
 
 				for (Object obj : arguments) {
 					if (obj != null) {
@@ -695,6 +708,7 @@ public final class ActionCatalog {
 				else {
 					methodKey = methodKey + ")";
 				}
+
 //				System.out.println("	methodKey: " + methodKey);
 				Object objectInstance = null;
 				Method objectMethod = null;
@@ -708,33 +722,52 @@ public final class ActionCatalog {
 					//I need to know how to instantiate the object.
 					//if there is a public constructor call it
 //					System.out.println("	didn't find a cached object");
-
 					Class klass = null;
-
 					klass = Class.forName(actions[action][1]);
 
 					for (Constructor c : klass.getConstructors()) {
 						if (c.getParameterCount() == 0) {
 //							System.out.println("	found a public constructor...");
-							objectInstance = c.newInstance(null);
+							try {
+								objectInstance = c.newInstance(null);
+							}
+							catch (ReflectiveOperationException roe ) {
+								roe.printStackTrace();
+								objectInstance = null;
+							}
 						}
 					}
 
 					//if there is not a public constructor but there is
 					//a public getInstance method call it
-					//
 					if (objectInstance == null) {
 //						System.out.println("	didn't find a public constructor...");
 						for (Method m : klass.getDeclaredMethods()) {
 //							System.out.println("		evaluating " + m.getName());
 							if ((m.getName().equals("getInstance")) && (m.getParameterCount() == 0) && (Modifier.isStatic(m.getModifiers()))) {
 //								System.out.println("	found a static getInstance method");
-								objectInstance = m.invoke(null, null);
-								objects.putIfAbsent(actions[action][1], objectInstance);
+								try {
+									objectInstance = m.invoke(null, null);
+								}
+								catch (ReflectiveOperationException roe ) {
+									roe.printStackTrace();
+									objectInstance = null;
+								}
+
+								if (objectInstance != null) {
+									objects.putIfAbsent(actions[action][1], objectInstance);
+								}
 							}
 						}
 					}
 				}
+
+//				if (objectInstance == null) {
+//					System.out.println("	objectInstance: null");
+//				}
+//				else {
+//					System.out.println("	objectInstance: " + objectInstance.getClass().getName());
+//				}
 
 				if (methods.containsKey(methodKey)) {
 //					System.out.println("	found cached method");
@@ -742,6 +775,7 @@ public final class ActionCatalog {
 				}
 				else {
 					//if the method isn't in the cache, add it
+//					System.out.println("	did not find cached method");
 					Class klass = Class.forName(actions[action][1]);
 					Class args[] = null;
 
@@ -760,12 +794,16 @@ public final class ActionCatalog {
 
 					try {
 						objectMethod = klass.getMethod(actions[action][2], args);
+//						System.out.println("klass: " + klass.getName());
+//						System.out.println("objectMethod.toString(): " + objectMethod.toString());
 					}
 					catch (NoSuchMethodException exc){
 						objectMethod = findMethod(klass, actions[action][2], args);
+//						System.out.println("	klass:" + klass.getName());
+//						System.out.println("	objectMethod.toString(): " + objectMethod.toString());
 						if(objectMethod == null){
 //							Logger.error(exc.getMessage());
-							throw new NoSuchMethodException("Could not find method " + actions[action][2] + " in class " + klass.getName());
+							throw new RuntimeException("Could not find method " + actions[action][2] + " in class " + klass.getName());
 						}
 					}
 
@@ -775,16 +813,29 @@ public final class ActionCatalog {
 					}
 				}
 
+				//TODO: I think this could be cleaned up a bit to have a single
+				//call to Method.invoke()
 				if (objectMethod != null) {
 //					System.out.println("	objectMethod: " + objectMethod.getName());
+//					System.out.println("	objectMethod.toString(): " + objectMethod.toString());
 					if (Modifier.isStatic(objectMethod.getModifiers())) {
 //						System.out.println("	" + objectMethod.getName() + " is static");
-						ret = objectMethod.invoke(null, arguments);
+						try {
+							ret = objectMethod.invoke(null, arguments);
+						}
+						catch (ReflectiveOperationException roe ) {
+							roe.printStackTrace();
+						}
 					}
 					else {
 						if (objectInstance != null) {
 //							System.out.println("	objectInstance: " + objectInstance.getClass().getName());
-							ret = objectMethod.invoke(objectInstance, arguments);
+							try {
+								ret = objectMethod.invoke(objectInstance, arguments);
+							}
+							catch (ReflectiveOperationException roe ) {
+								roe.printStackTrace();
+							}
 						}
 					}
 				}
@@ -801,13 +852,13 @@ public final class ActionCatalog {
 	// Method takes a Class, and searches its methods for the most-specific
 	// method that fits a given list of arguments.
 	private Method findMethod(Class klass, String methodName, Class args[]){
-	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
-		System.out.println("    Class: " + klass.getName());
-		System.out.println("    Method: " + methodName);
-		System.out.println("    args: ");
-     	for(Class arg : args){
-			System.out.println("        " + arg.getName());
-		}
+//	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
+//		System.out.println("    Class: " + klass.getName());
+//		System.out.println("    Method: " + methodName);
+//		System.out.println("    args: ");
+//     	for(Class arg : args){
+//			System.out.println("        " + arg.getName());
+//		}
 
 
 		// Retrieve all methods on class

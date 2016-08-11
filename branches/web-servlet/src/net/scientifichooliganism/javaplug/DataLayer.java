@@ -42,15 +42,15 @@ public final class DataLayer {
 	}
 
 	private String getDefaultStore(){
-		System.out.println("DataLayer.getDefaultStore()");
+//		System.out.println("DataLayer.getDefaultStore()");
 		if(defaultStore == null) {
-			System.out.println("    querying for default store");
+//			System.out.println("    querying for default store");
 			Vector<Configuration> configs = (Vector<Configuration>) query("Configuration");
-			System.out.println("    found " + configs.size() + " configs");
+//			System.out.println("    found " + configs.size() + " configs");
 			for (Configuration config : configs) {
 				if (config.getKey().equals("default_store")) {
 					defaultStore = config.getValue();
-					System.out.println("    found defaultStore " + defaultStore);
+//					System.out.println("    found defaultStore " + defaultStore);
 					//TODO: Look into this. The call to addStore is probably not necessary.
 					addStore(config.getValue());
 				}
@@ -184,6 +184,8 @@ public final class DataLayer {
 		return query(ActionCatalog.getInstance(), query);
 	}
 
+	//TODO: Modify this method to take a query object and overload to take a string,
+	//or just use query(String).
 	public Collection query (ActionCatalog ac, String queryStr) throws IllegalArgumentException, RuntimeException {
 //		System.out.println("DataLayer.query(ActionCatalog, String)");
 
@@ -226,14 +228,20 @@ public final class DataLayer {
 
 			// Query and aggregate plugins
 			for (String store : queryStores) {
-				Runnable r = new Runnable() {
-					@Override
-					public void run() {
-						results.addAll(queryPlugin(ac, store, translatedQuery));
-					}
-				};
+				//TODO: Only query stores that provide the object type(s) being requested or MetaData
+				try {
+					Runnable r = new Runnable() {
+						@Override
+						public void run() {
+							results.addAll(queryPlugin(ac, store, translatedQuery));
+						}
+					};
 
-				executorService.execute(r);
+					executorService.execute(r);
+				}
+				catch (Exception exc) {
+					exc.printStackTrace();
+				}
 			}
 
 			executorService.shutdown();
@@ -539,7 +547,7 @@ public final class DataLayer {
 	// Method adjusts query object for specific plugin, to ensure proper correlation and
 	// aggregation between data stores
 	private Query translateQuery(Query query){
-		System.out.println("Query.translateQuery(Query)");
+//		System.out.println("Query.translateQuery(Query)");
 		if (query == null) {
 			throw new RuntimeException("Query.translatedQuery(Query) query is null");
 		}
@@ -661,19 +669,19 @@ public final class DataLayer {
 			String store = vo.getLabel().split("\\|")[0];
 
 			if(!stores.contains(store)){
-				System.out.println("Stores are: ");
-				for(String storeStr : stores){
-					System.out.println(storeStr);
-				}
+//				System.out.println("Stores are: ");
+//				for(String storeStr : stores){
+//					System.out.println(storeStr);
+//				}
 
 				throw new IllegalArgumentException("persist(Object) was called on an object whose store (" + store + ") does not exist");
 			}
 
 			// Clear off plugin part of label, will rebuild on way back out of storage location
 			vo.setLabel(vo.getLabel().replaceFirst(store + "|", ""));
-			System.out.println("    Finish persisting on store " + store);
+//			System.out.println("    Finish persisting on store " + store);
 			persist(store, obj);
-			System.out.println("    Finish persisting on store " + store);
+//			System.out.println("    Finish persisting on store " + store);
 		}
 	}
 
@@ -769,7 +777,7 @@ public final class DataLayer {
 		stores.add(store);
 
 		// Determine what types are supported by the new store and add them to the store map
-		Collection<Configuration> configurations = (Collection<Configuration>)query("Configuration FROM XMLDataStorePlugin");
+		Collection<Configuration> configurations = (Collection<Configuration>)query("Configuration FROM " + store);
 		for(Configuration config : configurations){
 		    if(config.getKey().equals("provides")) {
 				if (!storeMap.containsKey(config.getValue())) {

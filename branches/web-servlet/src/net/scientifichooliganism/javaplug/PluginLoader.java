@@ -105,7 +105,7 @@ public class PluginLoader {
 					zipIn.close();
 				}
 				catch (Exception exc) {
-					//exc.printStackTrace();
+					exc.printStackTrace();
 				}
 			}
 
@@ -187,7 +187,7 @@ public class PluginLoader {
 							}
 
 							ac.addPlugin(strKeyTemp, strPathTemp);
-							ac.setPluginActive(strKeyTemp, true);
+							ac.setPluginActive(strKeyTemp, false);
 						}
 					}
 					catch (Exception exc) {
@@ -196,7 +196,7 @@ public class PluginLoader {
 				}
 				else {
 					ac.addPlugin(key, plugins.get(key));
-					ac.setPluginActive(key, true);
+					ac.setPluginActive(key, false);
 				}
 			}
 
@@ -225,12 +225,16 @@ public class PluginLoader {
 					}
 
 //					System.out.println("	attempting to load " + String.valueOf(url));
-					mthd.invoke((defaultClassLoader), new Object[]{url});
+					try {
+						mthd.invoke((defaultClassLoader), new Object[]{url});
+					}
+					catch (Exception exc) {
+						exc.printStackTrace();
+					}
 				}
 
 				String thisPath = PluginLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 				URL thisURL = (new File(thisPath)).toURI().toURL();
-
 				mthd.invoke(defaultClassLoader, new Object[]{thisURL});
 			}
 			catch (Exception exc) {
@@ -270,6 +274,20 @@ public class PluginLoader {
 	}
 
 	public static void bootstrap (ClassLoader classLoader) {
+		//The following bootstrap process is not quite correct.
+		//What needs to happen is the process that follows up
+		//to the point that the configs are retrieved. At that
+		//point the default data store should be determined and
+		//enabled. Configs should then be queried from the default
+		//data store and the system initialized with that configuration
+		//data.
+		//
+		//In order for that process to work, there needs to be mechanisms
+		//in place to handle automatically moving plugin specific data
+		//into the default data store. The only data that should ever
+		//really be local should be the config data for the default
+		//data store (which one it is) and the config data for
+		//required for that plugin to function.
 		try {
 			if(classLoader != null){
 				PluginLoader.defaultClassLoader = classLoader;
@@ -346,26 +364,32 @@ public class PluginLoader {
 						}
 						else if (conf.getKey().toLowerCase().trim().equals("storage")) {
 							ac.setPluginStorage(conf.getModule(), conf.getValue());
+                            if(ac.isPluginStorage(conf.getModule())){
+                            	dl.addStore(conf.getModule());
+							}
 						}
 					}
 
 					//this is done in a second pass to ensure the plugins have been activated so that the proper action can be called.
 					// Additionally, configuration data is populated into Core at this point for each plugin
-					for (Configuration conf : configs) {
-						if ((! conf.getKey().toLowerCase().trim().equals("active")) && (! conf.getKey().toLowerCase().trim().equals("storage"))) {
-							try {
-								String [] action = ac.findAction(conf.getModule() + ".setProperty");
+					//TODO: Commenting out this loop using a block comment causes bootstrap to fail,
+					//even though using inline comments does not. Figure out why.
+					//for (Configuration conf : configs) {
+					//	if ((! conf.getKey().toLowerCase().trim().equals("active")) && (! conf.getKey().toLowerCase().trim().equals("storage"))) {
+					//		try {
+					//			String [] action = ac.findAction(conf.getModule() + ".setProperty");
 
-								if ((action != null) && (action.length > 0)) {
-									ac.performAction(action[0], action[1], action[2], new Object[]{conf.getValue()});
-								}
-							}
-							catch (Exception exc) {
-								exc.printStackTrace();
-							}
-						}
-					}
+					//			if ((action != null) && (action.length > 0)) {
+					//				ac.performAction(action[0], action[1], action[2], new Object[]{conf.getValue()});
+					//			}
+					//		}
+					//		catch (Exception exc) {
+					//			exc.printStackTrace();
+					//		}
+					//	}
+					//}
 
+					//de-activate modules with dependencies that are not present
 					for(Configuration config : configs){
 						if(config.getKey().toLowerCase().equals("depends")){
 							String pluginName = config.getValue();
@@ -376,9 +400,6 @@ public class PluginLoader {
 							}
 						}
 					}
-
-
-
 				}
 			}
 		}
@@ -392,8 +413,7 @@ public class PluginLoader {
 		ActionCatalog ac = ActionCatalog.getInstance();
 		DataLayer dl = DataLayer.getInstance();
 
-		ac.findAction("XMLPlugin objectFromNode");
-		Collection<Configuration> configs = dl.query(ac, "Configuration WHERE Configuration.Key == \"shutdown_state\"");
+		Collection<Configuration> configs = dl.query("Configuration WHERE Configuration.Module == \"XMLPlugin\"");
 
 		Task task = new BaseTask();
 		task.setName("Testing Task");
