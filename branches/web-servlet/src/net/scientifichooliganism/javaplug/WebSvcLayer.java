@@ -1,7 +1,5 @@
 package net.scientifichooliganism.javaplug;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -146,7 +144,36 @@ public final class WebSvcLayer extends HttpServlet {
 					break;
 				case "remove":
 					System.out.println("    doing remove!");
-					throw new NotImplementedException();
+					xml = null;
+					json = null;
+                    if(parameters.containsKey("object")){
+						if(contentType.contains("xml")){
+							xml = (String) parameters.get("object");
+						} else {
+							json = (String) parameters.get("object");
+						}
+					} else {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No object specified");
+					}
+
+					object = null;
+					if (json != null) {
+						object = ac.performAction("JSONPlugin",
+								"net.scientifichooliganism.jsonplugin.JSONPlugin",
+								"objectFromJson", new Object[]{json});
+					} else if(xml != null){
+						object = ac.performAction("XMLPlugin",
+								"net.scientifichooliganism.xmlplugin.XMLPlugin",
+								"objectFromString", new Object[]{xml});
+					} else {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No json or xml string found");
+					}
+
+					if (object != null) {
+						dl.remove(object);
+					} else {
+						response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not create object from string");
+					}
 				default:
 					response.sendError(HttpServletResponse.SC_NOT_FOUND, "Action specified not found for DataLayer.");
 					break;
