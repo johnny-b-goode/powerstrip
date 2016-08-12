@@ -96,7 +96,7 @@ public final class ActionCatalog {
 
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
-//		System.out.println("ActionCatalog.addAction(String, String, String)");
+		System.out.println("ActionCatalog.addAction(String, String, String)");
 //		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
@@ -161,13 +161,16 @@ public final class ActionCatalog {
 	}
 
 	public Map<String, String> getParameterMap(String[] action){
+		System.out.println("ActionCatalog.getParameterMap(String[])");
 	    String className = action[1];
 		String methodName = action[2];
 		Map<String, String> ret = new TreeMap<>();
 
 		// Find mappings if we already have them
 		for(String key : paramMap.keySet()){
+			//TODO: What happens if a method is overloaded?
 			if(key.contains(methodName)){
+				//TODO: This looks backward.
 				ret.put(paramMap.get(key), key);
 			}
 		}
@@ -176,6 +179,12 @@ public final class ActionCatalog {
 		if(paramMap.size() == 0) {
 			try {
 				Class klass = Class.forName(className);
+				//TODO: The methods are already iterated and the appropriate
+				//method is already stored in the methods Map. Doesn't it make
+				//more sense to just move the logic responsible for creating the
+				//signature from performAction() into another method and call it
+				//from here to use the map that is already there to find the correct
+				//Method object?
 				Method methods[] = klass.getMethods();
 
 				for (Method method : methods) {
@@ -694,6 +703,9 @@ public final class ActionCatalog {
 					throw new RuntimeException("performAction(String, String, String, Object[]) invalid index in action");
 				}
 
+				//Using the plugin name here is irrelevant because if the class and method
+				//name are the same the JVM will not be able to distinquish between two methods
+				//anyway.
 				String methodKey = actions[action][1] + "." + actions[action][2] + "(";
 
 				for (Object obj : arguments) {
@@ -852,7 +864,7 @@ public final class ActionCatalog {
 	// Method takes a Class, and searches its methods for the most-specific
 	// method that fits a given list of arguments.
 	private Method findMethod(Class klass, String methodName, Class args[]){
-//	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
+	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
 //		System.out.println("    Class: " + klass.getName());
 //		System.out.println("    Method: " + methodName);
 //		System.out.println("    args: ");

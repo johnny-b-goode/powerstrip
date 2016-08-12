@@ -187,7 +187,7 @@ public final class WebSvcLayer extends HttpServlet {
 	}
 
 	public Map<String, Object> parseArgs(Map<String, String> stringArgs, String plugin, String action, String contentType) {
-		System.out.println("paresArgs()");
+		System.out.println("WebSvcLayer.parseArgs(Map<String, String>, String, String, String)");
 		String[] actionInfo = ac.findAction(plugin + " " + action);
 		Map<String, Object> results = new TreeMap<>();
 
@@ -249,6 +249,7 @@ public final class WebSvcLayer extends HttpServlet {
 	}
 
 	public void serveStaticPage(String plugin, HttpServletRequest request, HttpServletResponse response) {
+		System.out.println("serveStaticPage(String, HttpServletRequest, HttpServletResponse)");
 		try {
 			String pluginPath = ac.plugins.get(plugin);
 			String requestPath = request.getPathInfo();
@@ -333,24 +334,24 @@ public final class WebSvcLayer extends HttpServlet {
 		System.out.println("doGet()");
 		String requestType = null;
 		String contentType = null;
-		String plugin = null;
-		String action = null;
-
+		String pluginName = null;
+		String actionName = null;
 		contentType = checkHeaders(request, response);
 		requestType = response.getContentType();
-
 		String[] path = parsePath(request);
+
 		if(path.length >= 1){
-			plugin = path[0];
+			pluginName = path[0];
 		}
 
 		if(path.length >= 2){
-			action = path[1];
+			actionName = path[1];
 		}
 
-
 		response.setStatus(HttpServletResponse.SC_OK);
-		if(plugin == null || plugin.isEmpty()){
+
+		//TODO: Verify that calling response.sendError() breaks out of doGet.
+		if(pluginName == null || pluginName.isEmpty()){
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Plugin not specified in URL.");
 		}
 
@@ -361,13 +362,13 @@ public final class WebSvcLayer extends HttpServlet {
 			parameterStrings.put(key, request.getParameterMap().get(key)[0]);
 		}
 
-		Map<String, Object> parameters = parseArgs(parameterStrings, plugin, action, contentType);
+		Map<String, Object> parameters = parseArgs(parameterStrings, pluginName, actionName, contentType);
 
         Object result = null;
 		if(parameters != null){
-			result = doAction(plugin, action, contentType, parameters, response);
+			result = doAction(pluginName, actionName, contentType, parameters, response);
 		} else {
-			serveStaticPage(plugin, request, response);
+			serveStaticPage(pluginName, request, response);
 		}
 
 		if(result != null){
@@ -375,32 +376,48 @@ public final class WebSvcLayer extends HttpServlet {
 		}
 	}
 
+//TODO: The following two methods have been modified to use positive qualification
+//to fix a bug. Positive qualification sucks, so FIX THIS!
 	public String[] parseParamKeys(String paramString){
-		return paramString.split(",");
+		if ((paramString != null) && (paramString.length() > 0)) {
+			return paramString.split(",");
+		}
+		else {
+			return new String[0];
+		}
 	}
 
 	public String[] parseArgumentTypes(String methodSignature){
-		String typesString = methodSignature.substring(methodSignature.indexOf("(") + 1, methodSignature.lastIndexOf(")"));
-		String[] paramTypes = typesString.split(",");
-		return paramTypes;
+		String typesString = "";
+
+		if ((methodSignature != null) && (methodSignature.length() > 0)) {
+			typesString = methodSignature.substring(methodSignature.indexOf("(") + 1, methodSignature.lastIndexOf(")"));
+		}
+
+		return typesString.split(",");
 	}
 
 	public Map<String, String> getParameterMap(String[] action, Set<String> givenParameters){
 		System.out.println("WebSvcLayer.getParameterMap(String[], Set<String>)");
 		System.out.println("    Action: ");
+
 		for(String item : action){
 			System.out.println("        " + item);
 		}
-		System.out.println("    Parameters: ");
-		for(String parameter : givenParameters){
-			System.out.println("        " + parameter);
+
+		if ((givenParameters != null) && (givenParameters.size() > 0)) {
+			System.out.println("    Parameters: ");
+
+			for(String parameter : givenParameters){
+				System.out.println("        " + parameter);
+			}
 		}
-
-
 
 		Map<String, String> ret = new TreeMap<>();
 		Map<String, String> mappings = ac.getParameterMap(action);
 		Map<String, Integer> paramScores = new TreeMap<>();
+
+		System.out.println("	mappings.size(): " + mappings.size());
 
 		// Score the parameters based on number of matching parameters
 		// and number of parameters total
