@@ -11,4 +11,6 @@ public interface Plugin {
 	public default void setProperty (String key, Object value) throws RuntimeException {
 		throw new RuntimeException("setProperty(String) default implementation called");
 	}
+
+	public default void init () { }
 }

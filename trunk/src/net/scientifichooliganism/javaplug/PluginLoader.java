@@ -1,36 +1,27 @@
 package net.scientifichooliganism.javaplug;
 
-import java.io.File;
+import net.scientifichooliganism.javaplug.interfaces.Action;
+import net.scientifichooliganism.javaplug.interfaces.Configuration;
+import net.scientifichooliganism.javaplug.interfaces.Task;
+import net.scientifichooliganism.javaplug.vo.BaseTask;
 
+import java.io.*;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import java.util.Vector;
-
-import java.net.URI;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.MalformedURLException;
-
-import java.nio.file.Files;
-
+import java.util.Collection;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-
-import net.scientifichooliganism.javaplug.vo.*;
+import java.util.zip.ZipInputStream;
 
 /**
 * This class does stuff, maybe.
 */
 public class PluginLoader {
+	private static ClassLoader defaultClassLoader = ClassLoader.getSystemClassLoader();
 	/**
 	* The default constructor.
 	*/
@@ -101,6 +92,7 @@ public class PluginLoader {
 
 					item = zipIn.getNextEntry();
 				}
+
 			}
 			catch (ZipException zxc) {
 				zxc.printStackTrace();
@@ -113,11 +105,12 @@ public class PluginLoader {
 					zipIn.close();
 				}
 				catch (Exception exc) {
-					//exc.printStackTrace();
+					exc.printStackTrace();
 				}
 			}
 
 			pluginArchive.delete();
+			loadLibraries(pluginDirectory);
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
@@ -131,28 +124,29 @@ public class PluginLoader {
 	}
 
 	public static ConcurrentHashMap<String, String> findPlugins (String startingPath, String pluginsDirectoryName) {
-		//System.out.println("findPlugins(String, String) called with " + startingPath + ", " + pluginsDirectoryName);
+//		System.out.println("findPlugins(String, String) called with " + startingPath + ", " + pluginsDirectoryName);
 		ConcurrentHashMap<String, String> pluginMap = new ConcurrentHashMap<String, String>();
 
 		try {
 			File currentDir = new File(startingPath);
 
 			for (File temp : currentDir.listFiles()) {
-				//System.out.println("	temp.getName(): " + temp.getName());
-				//System.out.println("	temp.getCanonicalPath(): " + temp.getCanonicalPath());
-				//System.out.println("	temp.isDirectory(): " + String.valueOf(temp.isDirectory()));
+//				System.out.println("	temp.getName(): " + temp.getName());
+//				System.out.println("	temp.getCanonicalPath(): " + temp.getCanonicalPath());
+//				System.out.println("	temp.isDirectory(): " + String.valueOf(temp.isDirectory()));
 
 				if (temp.isDirectory()) {
 					if (temp.getName().toUpperCase().equals(pluginsDirectoryName.toUpperCase())) {
 						//this will be treated differently because the contents of this path should be directories representing plugins,
 						//and / or archives that should be expanded into directories representing plugins
-						//System.out.println("	Found plugins directory");
+//						System.out.println("	Found plugins directory");
 
 						for (File plugin : temp.listFiles()) {
 							if (pluginMap.get(plugin.getName().trim()) != null) {
 								throw new RuntimeException("a key containing the value " + plugin.getName().trim() + " already exists");
 							}
 
+//							System.out.println("    Adding plugin: " + plugin.getName() + " at: " + plugin.getCanonicalPath().trim());
 							pluginMap.putIfAbsent(plugin.getName().trim(), plugin.getCanonicalPath().trim());
 						}
 					}
@@ -175,17 +169,17 @@ public class PluginLoader {
 
 		try {
 			ConcurrentHashMap<String, String> plugins = findPlugins();
-			
+
 			for (String key : plugins.keySet()) {
-				//System.out.println("		key: " + key + ", value: " + String.valueOf(plugins.get(key)));
+//				System.out.println("		key: " + key + ", value: " + String.valueOf(plugins.get(key)));
 				File pluginFile = new File(plugins.get(key));
 
-				if (pluginFile.isFile()) {
+				if (pluginFile.isFile()){
 					//then it is an archive, extract it
 					try {
 						String strKeyTemp = key.substring(0, key.lastIndexOf("."));
 						String strPathTemp = extractPlugin(pluginFile);
-						//System.out.println("		strKeyTemp: " + strKeyTemp + ", strPathTemp: " + strPathTemp);
+//						System.out.println("		strKeyTemp: " + strKeyTemp + ", strPathTemp: " + strPathTemp);
 
 						if ((strPathTemp != null) && (strPathTemp.length() > 0)) {
 							if (ac.containsPlugin(strKeyTemp)) {
@@ -193,7 +187,7 @@ public class PluginLoader {
 							}
 
 							ac.addPlugin(strKeyTemp, strPathTemp);
-							ac.setPluginActive(strKeyTemp, true);
+							ac.setPluginActive(strKeyTemp, false);
 						}
 					}
 					catch (Exception exc) {
@@ -202,7 +196,7 @@ public class PluginLoader {
 				}
 				else {
 					ac.addPlugin(key, plugins.get(key));
-					ac.setPluginActive(key, true);
+					ac.setPluginActive(key, false);
 				}
 			}
 
@@ -211,8 +205,8 @@ public class PluginLoader {
 				mthd.setAccessible(true);
 
 				for (String plugin : ac.keySet()) {
-					//System.out.println("	plugin: " + plugin);
-					//System.out.println("	pluginPath: " + ac.getPluginPath(plugin));
+//					System.out.println("	plugin: " + plugin);
+//					System.out.println("	pluginPath: " + ac.getPluginPath(plugin));
 					URL url = null;
 
 					try {
@@ -230,12 +224,21 @@ public class PluginLoader {
 						throw new RuntimeException("url is empty");
 					}
 
-					//System.out.println("	attempting to load " + String.valueOf(url));
-					mthd.invoke(((URLClassLoader)ClassLoader.getSystemClassLoader()), new Object[]{url});
+//					System.out.println("	attempting to load " + String.valueOf(url));
+					try {
+						mthd.invoke((defaultClassLoader), new Object[]{url});
+					}
+					catch (Exception exc) {
+						exc.printStackTrace();
+					}
 				}
+
+				String thisPath = PluginLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+				URL thisURL = (new File(thisPath)).toURI().toURL();
+				mthd.invoke(defaultClassLoader, new Object[]{thisURL});
 			}
 			catch (Exception exc) {
-				System.out.println("messin' with the classloader failed:");
+//				System.out.println("messin' with the classloader failed:");
 				exc.printStackTrace();
 			}
 		}
@@ -246,19 +249,68 @@ public class PluginLoader {
 		return ac;
 	}
 
-	public static void main (String [] args) {
+	private static void loadLibraries(String folderPath){
+		loadLibraries(new File(folderPath));
+	}
+
+	private static void loadLibraries(File file){
+		if(file.isFile() && file.getName().endsWith(".jar")){
+			try {
+				Method addUrlMethod = (URLClassLoader.class).getDeclaredMethod("addURL", new Class[]{URL.class});
+				addUrlMethod.setAccessible(true);
+				addUrlMethod.invoke(defaultClassLoader, new Object[]{file.toURI().toURL()});
+			} catch (Exception exc){
+				exc.printStackTrace();
+			}
+		} else if(file.isDirectory()){
+			for(File item : file.listFiles()){
+				loadLibraries(item);
+			}
+		}
+	}
+
+	public static void bootstrap() {
+		bootstrap(null);
+	}
+
+	public static void bootstrap (ClassLoader classLoader) {
+		//The following bootstrap process is not quite correct.
+		//What needs to happen is the process that follows up
+		//to the point that the configs are retrieved. At that
+		//point the default data store should be determined and
+		//enabled. Configs should then be queried from the default
+		//data store and the system initialized with that configuration
+		//data.
+		//
+		//In order for that process to work, there needs to be mechanisms
+		//in place to handle automatically moving plugin specific data
+		//into the default data store. The only data that should ever
+		//really be local should be the config data for the default
+		//data store (which one it is) and the config data for
+		//required for that plugin to function.
 		try {
+			if(classLoader != null){
+				PluginLoader.defaultClassLoader = classLoader;
+			}
+
 			ActionCatalog ac = loadActionCatalog();
 			//load xml plugin
-			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource");
-			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "query");
+			ac.addAction("XMLPlugin", "net.scientifichooliganism.xmlplugin.XMLPlugin", "objectFromNode");
+			ac.setPluginActive("XMLPlugin", true);
+
+			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource");
+			ac.addAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "query");
 			ac.setPluginActive("XMLDataStorePlugin", true);
 			ac.setPluginStorage("XMLDataStorePlugin", true);
 
 			for (String plugin : ac.keySet()) {
-				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmlplugin.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
+				ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{ac.getPluginPath(plugin)});
 			}
+			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"../webapps/ROOT/data/"});
+//			ac.performAction("XMLDataStorePlugin", "net.scientifichooliganism.xmldatastore.XMLDataStorePlugin", "addResource", new Object[]{"data/config.xml"});
 
+
+//			System.out.println("Finished Performing actions!");
 			//Initialize a data directory that is sibling to plugins for the initial default
 
 			//System.out.println(String.valueOf(ac.isPluginActive("XMLDataStorePlugin")));
@@ -266,12 +318,13 @@ public class PluginLoader {
 
 			//ac.findAction("query");
 			//ac.findAction("XMLDataStorePlugin query");
-			//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmlplugin.XMLDataStorePlugin query");
+			//ac.findAction("XMLDataStorePlugin net.scientifichooliganism.xmldatastore.XMLDataStorePlugin query");
 
 			DataLayer dl = DataLayer.getInstance();
+
 			//read plugin data from xml
-			Vector<Action> actions = (Vector<Action>)dl.query(ac, "SELECT action FROM plugin");
-			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "SELECT config FROM plugin");
+			Vector<Action> actions = (Vector<Action>)dl.query(ac, "Action");
+			Vector<Configuration> configs = (Vector<Configuration>)dl.query(ac, "Configuration");
 
 			/*
 			All plugins will be disabled
@@ -280,22 +333,24 @@ public class PluginLoader {
 			Plugins will be configured - being enabled if appropriate
 			*/
 
-			for (String plugin : ac.keySet()) {
-				String path = ac.getPluginPath(plugin);
+			Object[] plugins = ac.keySet().toArray();
+			for (Object plugin : plugins){
+			    String pluginString = (String)plugin;
+				String path = ac.getPluginPath(pluginString);
 				/*This will remove the plugin, all actions associated with it, and
 				whether or not it is enabled and / or a storage plugin.
 				*/
-				ac.removePlugin(plugin);
-				ac.addPlugin(plugin, path);
+				ac.removePlugin(pluginString);
+				ac.addPlugin(pluginString, path);
 			}
 
-			//System.out.println("actions:");
+//			System.out.println("actions:");
 			if (actions != null) {
 				if (actions.size() > 0) {
 					for (Action act : actions) {
-						//System.out.println("	module: " + act.getModule());
-						//System.out.println("	class: " + act.getKlass());
-						//System.out.println("	method: " + act.getMethod());
+//						System.out.println("	module: " + act.getModule());
+//						System.out.println("	class: " + act.getKlass());
+//						System.out.println("	method: " + act.getMethod());
 						ac.addAction(act.getModule(), act.getKlass(), act.getMethod());
 					}
 				}
@@ -309,21 +364,39 @@ public class PluginLoader {
 						}
 						else if (conf.getKey().toLowerCase().trim().equals("storage")) {
 							ac.setPluginStorage(conf.getModule(), conf.getValue());
+                            if(ac.isPluginStorage(conf.getModule())){
+                            	dl.addStore(conf.getModule());
+							}
 						}
 					}
 
 					//this is done in a second pass to ensure the plugins have been activated so that the proper action can be called.
-					for (Configuration conf : configs) {
-						if ((! conf.getKey().toLowerCase().trim().equals("active")) && (! conf.getKey().toLowerCase().trim().equals("storage"))) {
-							try {
-								String [] action = ac.findAction(conf.getModule() + ".setProperty");
+					// Additionally, configuration data is populated into Core at this point for each plugin
+					//TODO: Commenting out this loop using a block comment causes bootstrap to fail,
+					//even though using inline comments does not. Figure out why.
+					//for (Configuration conf : configs) {
+					//	if ((! conf.getKey().toLowerCase().trim().equals("active")) && (! conf.getKey().toLowerCase().trim().equals("storage"))) {
+					//		try {
+					//			String [] action = ac.findAction(conf.getModule() + ".setProperty");
 
-								if ((action != null) && (action.length > 0)) {
-									ac.performAction(action[0], action[1], action[2], new Object[]{conf.getValue()});
-								}
-							}
-							catch (Exception exc) {
-								exc.printStackTrace();
+					//			if ((action != null) && (action.length > 0)) {
+					//				ac.performAction(action[0], action[1], action[2], new Object[]{conf.getValue()});
+					//			}
+					//		}
+					//		catch (Exception exc) {
+					//			exc.printStackTrace();
+					//		}
+					//	}
+					//}
+
+					//de-activate modules with dependencies that are not present
+					for(Configuration config : configs){
+						if(config.getKey().toLowerCase().equals("depends")){
+							String pluginName = config.getValue();
+							if(!(ac.containsPlugin(pluginName) && ac.isPluginActive(pluginName))){
+								ac.setPluginActive(config.getModule(), false);
+								String message = config.getModule() + " depends on " + pluginName +
+										" which was either not added or not enabled.";
 							}
 						}
 					}
@@ -333,8 +406,31 @@ public class PluginLoader {
 		catch (Exception exc) {
 			exc.printStackTrace();
 		}
-		finally {
-			System.exit(0);
-		}
+	}
+
+	public static void main(String args[]){
+		bootstrap();
+		ActionCatalog ac = ActionCatalog.getInstance();
+		DataLayer dl = DataLayer.getInstance();
+
+		Collection<Configuration> configs = dl.query("Configuration WHERE Configuration.Module == \"XMLPlugin\"");
+
+		Task task = new BaseTask();
+		task.setName("Testing Task");
+		task.setDescription("A task to test persistence!");
+
+		dl.persist(task);
+
+		Collection tasks = dl.query("Task");
+
+        Object removeObject = tasks.iterator().next();
+
+		dl.remove(removeObject);
+
+		String json = (String)ActionCatalog.getInstance().performAction("JSONPlugin",
+					"net.scientifichooliganism.jsonplugin.JSONPlugin",
+					"jsonFromObject", new Object[]{configs});
+
+		System.out.println(json);
 	}
 }
