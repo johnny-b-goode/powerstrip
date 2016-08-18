@@ -1,8 +1,10 @@
 package net.scientifichooliganism.javaplug.vo;
 
-public class Application extends ValueObject {
+import net.scientifichooliganism.javaplug.interfaces.TaskCategory;
 
-	public Application () {
+public class BaseTaskCategory extends BaseValueObject implements TaskCategory {
+
+	public BaseTaskCategory() {
 		super();
 	}
 

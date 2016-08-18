@@ -1,8 +1,10 @@
 package net.scientifichooliganism.javaplug.vo;
 
-public class TaskCategory extends ValueObject {
+import net.scientifichooliganism.javaplug.interfaces.Transaction;
 
-	public TaskCategory () {
+public class BaseTransaction extends BaseValueObject implements Transaction {
+
+	public BaseTransaction() {
 		super();
 	}
 

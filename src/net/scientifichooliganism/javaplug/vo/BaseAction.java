@@ -1,7 +1,8 @@
 package net.scientifichooliganism.javaplug.vo;
 
-public class Action extends ValueObject {
-	private int id;
+import net.scientifichooliganism.javaplug.interfaces.Action;
+
+public class BaseAction extends BaseValueObject implements Action{
 	private String name;
 	private String description;
 	private String module;
@@ -9,9 +10,8 @@ public class Action extends ValueObject {
 	private String url;
 	private String method;
 
-	public Action () {
+	public BaseAction() {
 		super();
-		id = -1;
 		name = null;
 		description = null;
 		module = null;

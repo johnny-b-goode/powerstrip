@@ -1,9 +1,13 @@
 package net.scientifichooliganism.javaplug;
 
+import javafx.util.Pair;
+import net.scientifichooliganism.javaplug.annotations.Param;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,6 +33,7 @@ public final class ActionCatalog {
 	ConcurrentHashMap<String, Boolean> pluginsStorage;
 	ConcurrentHashMap<String, Object> objects;
 	ConcurrentHashMap<String, Method> methods;
+    ConcurrentHashMap<String, String> paramMap;
 
 	/**
 	* The default constructor.
@@ -41,6 +46,7 @@ public final class ActionCatalog {
 			pluginsStorage = new ConcurrentHashMap<String, Boolean>();
 			objects = new ConcurrentHashMap<String, Object>();
 			methods = new ConcurrentHashMap<String, Method>();
+			paramMap = new ConcurrentHashMap<>();
 		}
 		catch (Exception exc) {
 			exc.printStackTrace();
@@ -59,6 +65,7 @@ public final class ActionCatalog {
 
 	/**add a plugin*/
 	public void addPlugin (String pluginName, String pluginPath) throws IllegalArgumentException {
+//		System.out.println("Adding plugin: " + pluginName + " with path: " + pluginPath);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addPlugin (String, String) was called with a null string");
 		}
@@ -90,6 +97,7 @@ public final class ActionCatalog {
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
 		System.out.println("ActionCatalog.addAction(String, String, String)");
+//		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
 		}
@@ -99,7 +107,9 @@ public final class ActionCatalog {
 		}
 
 		if (! plugins.containsKey(pluginName)) {
-			throw new IllegalArgumentException("addAction(String, String, String, String) was called for a plugin that does not exist in the catalog");
+			throw new IllegalArgumentException("addAction(String, String, String, String) was called for a plugin ("
+					+ pluginName
+					+ ") that does not exist in the catalog");
 		}
 
 		if (className == null) {
@@ -150,6 +160,71 @@ public final class ActionCatalog {
 		//}
 	}
 
+	public Map<String, String> getParameterMap(String[] action){
+		System.out.println("ActionCatalog.getParameterMap(String[])");
+	    String className = action[1];
+		String methodName = action[2];
+		Map<String, String> ret = new TreeMap<>();
+
+		// Find mappings if we already have them
+		for(String key : paramMap.keySet()){
+			//TODO: What happens if a method is overloaded?
+			if(key.contains(methodName)){
+				//TODO: This looks backward.
+				ret.put(paramMap.get(key), key);
+			}
+		}
+
+		// If we don't have them, add them
+		if(paramMap.size() == 0) {
+			try {
+				Class klass = Class.forName(className);
+				//TODO: The methods are already iterated and the appropriate
+				//method is already stored in the methods Map. Doesn't it make
+				//more sense to just move the logic responsible for creating the
+				//signature from performAction() into another method and call it
+				//from here to use the map that is already there to find the correct
+				//Method object?
+				Method methods[] = klass.getMethods();
+
+				for (Method method : methods) {
+					if (method.getName().equals(methodName)) {
+						Annotation[][] methodAnnotations = method.getParameterAnnotations();
+						String paramString = "";
+						String methodSignature = method.getName() + "(";
+
+						for(Class paramType : method.getParameterTypes()){
+							methodSignature += paramType.getName() + ",";
+						}
+
+						methodSignature = methodSignature.substring(0, methodSignature.length() - 1);
+						methodSignature += ")";
+//                        System.out.println(methodSignature);
+
+						for(Annotation[] paramAnnotation : methodAnnotations){
+							for(Annotation annotation : paramAnnotation){
+								if(annotation instanceof Param){
+									if(paramString.isEmpty()){
+										paramString = ((Param) annotation).name();
+									} else {
+										paramString += "," + ((Param) annotation).name();
+									}
+								}
+							}
+						}
+
+						ret.put(paramString, methodSignature);
+						paramMap.putIfAbsent(methodSignature, paramString);
+					}
+				}
+			} catch (ClassNotFoundException exc) {
+				exc.printStackTrace();
+			}
+		}
+
+		return ret;
+	}
+
 	/**find an action*/
 	public String[] findAction (String query) throws IllegalArgumentException {
 		if (query == null) {
@@ -160,9 +235,9 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("findAction(String) was called with an empty string");
 		}
 
-		System.out.println("ActionCatalog.findAction(String, String)");
+//		System.out.println("ActionCatalog.findAction(String, String)");
 		query = query.trim();
-		String ret[] = null;
+		String[] ret = null;
 		String queryMethod = null;
 		String queryClass = null;
 
@@ -186,37 +261,86 @@ public final class ActionCatalog {
 			queryClass = null;
 		}
 
-		//System.out.println("	queryMethod: " + String.valueOf(queryMethod));
-		//System.out.println("	queryClass: " + String.valueOf(queryClass));
+//		System.out.println("	queryMethod: " + String.valueOf(queryMethod));
+//		System.out.println("	queryClass: " + String.valueOf(queryClass));
 
 		for (String [] action : actions) {
 			if (action[2].equals(queryMethod)) {
-				//System.out.println("	possible match found...");
+//				System.out.println("	possible match found...");
 				if ((queryClass == null) || (queryClass.length() <= 0)) {
-					//System.out.println("	action positively matched");
+//					System.out.println("	action positively matched");
 					return action;
 				}
 				else {
+					//If the first part of the query contains the plugin name OR the class name...
 					if ((queryClass.contains(action[0])) || (queryClass.contains(action[1]))) {
-						//System.out.println("	continuing evaluation...");
+//						System.out.println("	continuing evaluation...");
+						//If the first part of the query contains the plugin name AND the class name...
 						if ((queryClass.contains(action[0])) && (queryClass.contains(action[1]))) {
-							//System.out.println("	action positively matched");
+//							System.out.println("	action positively matched");
 							return action;
 						}
-						else if (ret != null) {
-							if ((queryClass.contains(ret[0])) && (queryClass.contains(action[1]))) {
-								//System.out.println("	possible match found");
+						//If the first part of the query contains the class name...
+						else if (queryClass.contains(action[1])) {
+							//If a possible candidate has already been selected...
+							if (ret != null) {
+								//If the possible candidate matches on plugin but not class (if it matched on class
+								//and plugin this method would have returned immediately) and the current candidate
+								//matches on class, then prefer the current candidate.
+								if ((queryClass.contains(ret[0])) && (queryClass.contains(action[1]))) {
+									ret = action;
+								}
+							}
+							else {
 								ret = action;
 							}
 						}
-						else {
-							//System.out.println("	possible match found");
-							ret = action;
+						//If the first part of the query contains the plugin name...
+						else if (queryClass.contains(action[0])) {
+							if (ret == null) {
+								ret = action;
+							}
 						}
 					}
 				}
 			}
 		}
+
+//		for(String[] action : ret) {
+//		    if(action[3] == null){
+//		    	String className = action[1];
+//				String methodName = action[2];
+//
+//				try{
+//					Class klass = Class.forName(className);
+//					for(Method method : klass.getMethods()){
+//						if (method.getName().equals(methodName)) {
+//							Annotation[][] annotations = method.getParameterAnnotations();
+//							for(Annotation[] annotation : annotations){
+//								Param paramAnnotation = null;
+//							    for(Annotation an : annotation){
+//							    	if(an instanceof Param){
+//										paramAnnotation = (Param)an;
+//									}
+//								}
+//								if(paramAnnotation != null) {
+//									String paramName = paramAnnotation.name();
+//									if (action[3] == null) {
+//										action[3] = paramName;
+//									} else {
+//										action[3] = action[3] + "," + paramName;
+//									}
+//								} else {
+//									action[3] = "null";
+//								}
+//							}
+//						}
+//					}
+//				} catch(ClassNotFoundException exc){
+//					exc.printStackTrace();
+//				}
+//			}
+//		}
 
 		return ret;
 	}
@@ -276,7 +400,7 @@ public final class ActionCatalog {
 
 		for (String[] action : actions) {
 			//System.out.println("	" + action[0]);
-			if (action[0].equals(pluginName)) {
+			if (action[0] != null && action[0].equals(pluginName)) {
 				removeAction(action[0], action[1], action[2]);
 			}
 		}
@@ -284,7 +408,7 @@ public final class ActionCatalog {
 
 	/**remove an action from the catalog*/
 	public void removeAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.removeAction(String, String, String)");
+//		System.out.println("ActionCatalog.removeAction(String, String, String)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("removeAction(String, String, String) was called with a null string");
 		}
@@ -362,13 +486,13 @@ public final class ActionCatalog {
 		}
 
 		if (classFound == false) {
-			if (objects.contains(className)) {
+			if (objects.containsKey(className)) {
 				objects.remove(className);
 			}
 		}
 
 		if (methodFound == false) {
-			if (methods.contains(methodName)) {
+			if (methods.containsKey(methodName)) {
 				methods.remove(methodName);
 			}
 		}
@@ -376,7 +500,7 @@ public final class ActionCatalog {
 
 	/**set the active state on a plugin*/
 	public void setPluginActive (String pluginName, String pluginState) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.setPluginActive (String, String)");
+//		System.out.println("ActionCatalog.setPluginActive (String, String)");
 		if (pluginState == null) {
 			throw new IllegalArgumentException("setPluginActive (String, String) was called with a null string");
 		}
@@ -395,7 +519,7 @@ public final class ActionCatalog {
 
 	/**set the active state on a plugin*/
 	public void setPluginActive (String pluginName, boolean pluginState) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.setPluginActive (String, boolean)");
+//		System.out.println("ActionCatalog.setPluginActive (String, boolean)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("setPluginActive (String, boolean) was called with a null string");
 		}
@@ -425,6 +549,8 @@ public final class ActionCatalog {
 	libraries to contain minimum configuration. Such plugins do not require any
 	explicit action configuration.*/
 	public boolean isPluginActive (String pluginName) throws IllegalArgumentException {
+//		System.out.println("ActionCatalog.isPluginActive(String)");
+//		System.out.println("    Calling on: " + pluginName);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("isPluginActive (String) was called with a null string");
 		}
@@ -449,7 +575,7 @@ public final class ActionCatalog {
 
 	/**flag the plugin as a storage plugin*/
 	public void setPluginStorage (String pluginName, String pluginState) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.setPluginStorage (String, String)");
+//		System.out.println("ActionCatalog.setPluginStorage (String, String)");
 		if (pluginState == null) {
 			throw new IllegalArgumentException("setPluginStorage (String, String) was called with a null string");
 		}
@@ -471,7 +597,7 @@ public final class ActionCatalog {
 	which will prevent the actions associated with the plugin being automatically exposed
 	through the web service layer.*/
 	public void setPluginStorage (String pluginName, boolean pluginState) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.setPluginStorage (String, boolean)");
+//		System.out.println("ActionCatalog.setPluginStorage (String, boolean)");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("setPluginActive (String, boolean) was called with a null string");
 		}
@@ -526,6 +652,11 @@ public final class ActionCatalog {
 
 	/*I don't need to know the return type because it's not part of the method signature*/
 	public Object performAction(String pluginName, String className, String methodName, Object[] arguments) throws IllegalArgumentException {
+//		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
+//		System.out.println("    plugin: " + pluginName);
+//		System.out.println("    class: " + className);
+//		System.out.println("    method: " + methodName);
+
 		if (pluginName == null) {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with a null string");
 		}
@@ -554,7 +685,6 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("performAction(String, String, String, Object[]) was called with an empty string");
 		}
 
-		System.out.println("ActionCatalog.performAction(String, String, String, Object[])");
 		Object ret = null;
 
 		if (isPluginActive(pluginName)) {
@@ -562,9 +692,10 @@ public final class ActionCatalog {
 				int action = -1;
 
 				for (int i = 0; i < actions.length; i++) {
-					//System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2]);
-					if ((actions[i][0].equals(pluginName)) && (actions[i][1].equals(className)) && (actions[i][2].equals(methodName))) {
-							action = i;
+//					System.out.println("	" + actions[i][0] + ", " + actions[i][1] + ", " + actions[i][2] + " index: " + i);
+					if ((actions[i][0].equals(pluginName)) && (actions[i][1].equals(className)) &&(actions[i][2].equals(methodName))) {
+						action = i;
+						i = actions.length;
 					}
 				}
 
@@ -572,7 +703,10 @@ public final class ActionCatalog {
 					throw new RuntimeException("performAction(String, String, String, Object[]) invalid index in action");
 				}
 
-				String methodKey = actions[action][2] + "(";
+				//Using the plugin name here is irrelevant because if the class and method
+				//name are the same the JVM will not be able to distinquish between two methods
+				//anyway.
+				String methodKey = actions[action][1] + "." + actions[action][2] + "(";
 
 				for (Object obj : arguments) {
 					if (obj != null) {
@@ -580,51 +714,80 @@ public final class ActionCatalog {
 					}
 				}
 
-				methodKey = methodKey.substring(0, methodKey.lastIndexOf(",")) + ")";
-				//System.out.println("	methodKey: " + methodKey);
+				if(methodKey.lastIndexOf(",") != -1) {
+					methodKey = methodKey.substring(0, methodKey.lastIndexOf(",")) + ")";
+				}
+				else {
+					methodKey = methodKey + ")";
+				}
+
+//				System.out.println("	methodKey: " + methodKey);
 				Object objectInstance = null;
 				Method objectMethod = null;
 
 				if (objects.containsKey(actions[action][1])) {
-					System.out.println("	found cached object");
+//					System.out.println("	found cached object");
 					objectInstance = objects.get(actions[action][1]);
 				}
 				else {
 					//This can be a bit complicated because at this point
 					//I need to know how to instantiate the object.
 					//if there is a public constructor call it
-					//System.out.println("	didn't find a cached object");
-					Class klass = Class.forName(actions[action][1]);
+//					System.out.println("	didn't find a cached object");
+					Class klass = null;
+					klass = Class.forName(actions[action][1]);
 
 					for (Constructor c : klass.getConstructors()) {
 						if (c.getParameterCount() == 0) {
-							//System.out.println("	found a public constructor...");
-							objectInstance = c.newInstance(null);
+//							System.out.println("	found a public constructor...");
+							try {
+								objectInstance = c.newInstance(null);
+							}
+							catch (ReflectiveOperationException roe ) {
+								roe.printStackTrace();
+								objectInstance = null;
+							}
 						}
 					}
 
 					//if there is not a public constructor but there is
 					//a public getInstance method call it
-					//
 					if (objectInstance == null) {
-						//System.out.println("	didn't find a public constructor...");
+//						System.out.println("	didn't find a public constructor...");
 						for (Method m : klass.getDeclaredMethods()) {
-							//System.out.println("		evaluating " + m.getName());
+//							System.out.println("		evaluating " + m.getName());
 							if ((m.getName().equals("getInstance")) && (m.getParameterCount() == 0) && (Modifier.isStatic(m.getModifiers()))) {
-								//System.out.println("	found a static getInstance method");
-								objectInstance = m.invoke(null, null);
-								objects.putIfAbsent(actions[action][1], objectInstance);
+//								System.out.println("	found a static getInstance method");
+								try {
+									objectInstance = m.invoke(null, null);
+								}
+								catch (ReflectiveOperationException roe ) {
+									roe.printStackTrace();
+									objectInstance = null;
+								}
+
+								if (objectInstance != null) {
+									objects.putIfAbsent(actions[action][1], objectInstance);
+								}
 							}
 						}
 					}
 				}
 
+//				if (objectInstance == null) {
+//					System.out.println("	objectInstance: null");
+//				}
+//				else {
+//					System.out.println("	objectInstance: " + objectInstance.getClass().getName());
+//				}
+
 				if (methods.containsKey(methodKey)) {
-					System.out.println("	found cached method");
+//					System.out.println("	found cached method");
 					objectMethod = methods.get(methodKey);
 				}
 				else {
 					//if the method isn't in the cache, add it
+//					System.out.println("	did not find cached method");
 					Class klass = Class.forName(actions[action][1]);
 					Class args[] = null;
 
@@ -636,34 +799,227 @@ public final class ActionCatalog {
 						}
 					}
 
-					objectMethod = klass.getMethod(actions[action][2], args);
+//					System.out.println("class: " + klass.getName());
+//					for(Method m : klass.getClass().getMethods()){
+//						System.out.println("    " + m.getName());
+//					}
+
+					try {
+						objectMethod = klass.getMethod(actions[action][2], args);
+//						System.out.println("klass: " + klass.getName());
+//						System.out.println("objectMethod.toString(): " + objectMethod.toString());
+					}
+					catch (NoSuchMethodException exc){
+						objectMethod = findMethod(klass, actions[action][2], args);
+//						System.out.println("	klass:" + klass.getName());
+//						System.out.println("	objectMethod.toString(): " + objectMethod.toString());
+						if(objectMethod == null){
+//							Logger.error(exc.getMessage());
+							throw new RuntimeException("Could not find method " + actions[action][2] + " in class " + klass.getName());
+						}
+					}
 
 					if (objectMethod != null) {
+//						System.out.println("    adding method to cache");
 						methods.putIfAbsent(methodKey, objectMethod);
 					}
 				}
 
+				//TODO: I think this could be cleaned up a bit to have a single
+				//call to Method.invoke()
 				if (objectMethod != null) {
-					System.out.println("	objectMethod: " + objectMethod.getName());
+//					System.out.println("	objectMethod: " + objectMethod.getName());
+//					System.out.println("	objectMethod.toString(): " + objectMethod.toString());
 					if (Modifier.isStatic(objectMethod.getModifiers())) {
-						System.out.println("	" + objectMethod.getName() + " is static");
-						ret = objectMethod.invoke(null, arguments);
+//						System.out.println("	" + objectMethod.getName() + " is static");
+						try {
+							ret = objectMethod.invoke(null, arguments);
+						}
+						catch (ReflectiveOperationException roe ) {
+							roe.printStackTrace();
+						}
 					}
 					else {
 						if (objectInstance != null) {
-							System.out.println("	objectInstance: " + objectInstance.getClass().getName());
-							ret = objectMethod.invoke(objectInstance, arguments);
+//							System.out.println("	objectInstance: " + objectInstance.getClass().getName());
+							try {
+								ret = objectMethod.invoke(objectInstance, arguments);
+							}
+							catch (ReflectiveOperationException roe ) {
+								roe.printStackTrace();
+							}
 						}
 					}
 				}
 			}
 			catch (Exception exc) {
+//				Logger.log(exc.getMessage());
 				exc.printStackTrace();
 			}
 		}
 
 		return ret;
 	}
+
+	// Method takes a Class, and searches its methods for the most-specific
+	// method that fits a given list of arguments.
+	private Method findMethod(Class klass, String methodName, Class args[]){
+	    System.out.println("ActionCatalog.findMethod(Class,String,Class)");
+//		System.out.println("    Class: " + klass.getName());
+//		System.out.println("    Method: " + methodName);
+//		System.out.println("    args: ");
+//     	for(Class arg : args){
+//			System.out.println("        " + arg.getName());
+//		}
+
+
+		// Retrieve all methods on class
+		ArrayList<Method> methodList = new ArrayList<Method>(Arrays.asList(klass.getMethods()));
+
+//		System.out.println("Searching methods: ");
+//		for(Method m : methodList){
+//			System.out.println("    " + m.getName());
+//            for(Class paramType : m.getParameterTypes()){
+//
+//            	System.out.println("        " + paramType.getName());
+//			}
+//
+//		}
+
+		// Remove any methods that do not match the method name given
+		methodList.removeIf(m -> !(m.getName().equals(methodName)));
+		// Remove any methods that have a different number of parametrs
+		methodList.removeIf(m -> m.getParameterCount() != args.length);
+
+		// Create priority queue that will compare based on Integer size in Pair
+		PriorityQueue<Pair<Method, Integer>> methodQueue = new PriorityQueue<>(
+				methodList.size(),
+				new Comparator<Pair<Method, Integer>>() {
+					@Override
+					public int compare(Pair<Method, Integer> o1, Pair<Method, Integer> o2) {
+						// PriorityQueue<> prioritizes the small value, so we flip logic
+						if(o1.getValue() > o2.getValue()){
+							return -1;
+						} else if(o1.getValue() < o2.getValue()){
+							return 1;
+						} else {
+							return 0;
+						}
+					}
+				}
+		);
+
+		// The priority used for method selection is as follows
+		// Methods with the most number of specific type matches are prioritized first
+		//     When two methods have the same number of specific type matches, this tie is broken by
+		//     determining which requested argument has the closest relation to a type in
+		//     the argument list of the reflected method
+		//	       If both and interface and a super class are found to have the same relation, the
+		//         algorithm chooses the super type over the interface
+		// This is the currently implemented solution
+
+		// Populate a priority queue with the number of parameter matches in
+		// method signature as the priority indicator.
+		for(Method m : methodList){
+			// count matching params
+			Class paramTypes[] = m.getParameterTypes();
+			int matches = 0;
+			for(int i = 0; i < paramTypes.length; i++){
+				if(paramTypes[i] == args[i]){
+					matches++;
+				}
+			}
+			methodQueue.add(new Pair<>(m, matches));
+		}
+
+		// Indicates a method has been found where the types match
+		boolean foundMatch = false;
+		Method bestMatch = null;
+		int bestScore = -1;
+		while(!foundMatch && methodQueue.size() > 0){
+			ArrayList<Method> bestPriorityMethods = new ArrayList<>();
+			int highestPriority = methodQueue.peek().getValue();
+
+			// Retrieve set of highest priority methods
+			while(methodQueue.size() > 0 && methodQueue.peek().getValue() == highestPriority){
+				bestPriorityMethods.add(methodQueue.poll().getKey());
+			}
+
+			// Assign each a "score" based on its match-ability
+			for(int i = 0; i < bestPriorityMethods.size(); i++){
+				Method m = bestPriorityMethods.get(i);
+				int score = 0;
+				boolean isValid = true;
+				Class paramTypes[] = m.getParameterTypes();
+				for(int j = 0; j < paramTypes.length; j++){
+					int distance = getDistance(args[j], paramTypes[j]);
+
+					// If distance is less then zero, we have a class mis-match
+					// cannot use the provided method
+					if(distance < 0){
+						isValid = false;
+					} else {
+						// The score of a function will be the sum of its
+						// parameters' distances
+						score += distance;
+					}
+				}
+
+				if(isValid){
+					if(bestMatch == null || score < bestScore){
+						bestMatch = m;
+						bestScore = score;
+					}
+					foundMatch = true;
+				} else {
+					bestPriorityMethods.remove(i);
+				}
+			}
+		}
+
+		return bestMatch;
+	}
+
+	private int getDistance(Class klass, Class target){
+		ArrayDeque<Class> searchQueue = new ArrayDeque<>();
+		ArrayDeque<Integer> distanceQueue = new ArrayDeque<>();
+		searchQueue.push(klass);
+		distanceQueue.push(0);
+		boolean found = false;
+		while(!found && !searchQueue.isEmpty()){
+			Class nextClass = searchQueue.poll();
+			int distance = distanceQueue.poll();
+			if(nextClass == target){
+				found = true;
+				if(nextClass.isInterface()){
+					return distance;
+				} else {
+					// Super classes are considered "closer" than interfaces.
+					// This is a tie-breaking mechanism between super classes
+					// and interfaces at the same level.
+					// However we do not want negative distances
+					if(distance > 0){
+						distance--;
+					}
+
+					return distance;
+				}
+			} else {
+				if(nextClass.getSuperclass() != null){
+					searchQueue.push(nextClass.getSuperclass());
+					distanceQueue.push(distance + 2);
+				}
+				for(Class i : nextClass.getInterfaces()){
+					searchQueue.push(i);
+					distanceQueue.push(distance + 2);
+				}
+			}
+		}
+
+		// No matching class found
+		return -1;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 	/**a bunch of tests, I mean, a main method*/

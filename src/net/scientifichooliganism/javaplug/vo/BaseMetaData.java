@@ -1,13 +1,15 @@
 package net.scientifichooliganism.javaplug.vo;
 
-public class MetaData extends ValueObject {
+import net.scientifichooliganism.javaplug.interfaces.*;
+
+public class BaseMetaData extends BaseValueObject implements MetaData {
 	private String object;
 	private String objectID;
 	private int sequence;
 	private String key;
 	private String value;
 
-	public MetaData () {
+	public BaseMetaData () {
 		super();
 		object = null;
 		objectID = null;
@@ -139,7 +141,7 @@ public class MetaData extends ValueObject {
 			throw new IllegalArgumentException("setKey(String) was called with an empty string");
 		}
 
-		validateObjectSet();
+//		validateObjectSet();
 		key = in;
 		validateKeyValue();
 	}
@@ -153,7 +155,7 @@ public class MetaData extends ValueObject {
 			throw new IllegalArgumentException("setValue(String) was called with a null string");
 		}
 
-		validateObjectSet();
+//		validateObjectSet();
 		value = in;
 		validateKeyValue();
 	}

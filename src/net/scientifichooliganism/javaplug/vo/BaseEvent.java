@@ -1,8 +1,10 @@
 package net.scientifichooliganism.javaplug.vo;
 
-public class Environment extends ValueObject {
+import net.scientifichooliganism.javaplug.interfaces.Event;
 
-	public Environment () {
+public class BaseEvent extends BaseValueObject implements Event{
+
+	public BaseEvent() {
 		super();
 	}
 
