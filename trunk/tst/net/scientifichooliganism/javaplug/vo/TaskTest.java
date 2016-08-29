@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.Random;
 
 import static org.junit.Assert.*;
@@ -24,8 +25,8 @@ public class TaskTest {
     public void constructorTest(){
         assertNull(task.getName());
         assertNull(task.getDescription());
-        assertNull(task.getConcurrent());
-        assertNull(task.getExclusive());
+        assertFalse(task.getConcurrent());
+        assertFalse(task.getExclusive());
         assertNull(task.getScheduledDuration());
         assertNull(task.getStartDate());
         assertNull(task.getCompletedDate());
@@ -68,6 +69,15 @@ public class TaskTest {
 
     @Test
     public void setGetStartDate(){
+        Date startDate = new Date();
+        task.setStartDate(startDate);
+        assertEquals(startDate, task.getStartDate());
+    }
 
+    @Test
+    public void setGetCompletedDate(){
+        Date completedDate = new Date();
+        task.setCompletedDate(completedDate);
+        assertEquals(completedDate, task.getCompletedDate());
     }
 }
