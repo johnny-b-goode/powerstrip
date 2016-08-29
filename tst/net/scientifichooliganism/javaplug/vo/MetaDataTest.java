@@ -3,8 +3,8 @@ package net.scientifichooliganism.javaplug.vo;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
-import org.junit.runner.*;
 
 public class MetaDataTest {
 	private BaseMetaData metadata;
@@ -33,6 +33,9 @@ public class MetaDataTest {
 		metadata.setObjectID("some_object_id");
 	}
 
+	// The logic surrounding MetaData has changed for the time being, this may not be final yet, however this test
+	// should be ignored.
+	@Ignore
 	@Test(expected = Exception.class)
 	public void validateTest02 () {
 		metadata.setKey("some_key");

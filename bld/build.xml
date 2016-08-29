@@ -168,8 +168,17 @@
 				<pathelement path="${tst}" />
 			</classpath>
 			<formatter type="xml" />
-			<!--<test name="net.scientifichooliganism.javaplug.vo.MetaDataTest" todir="${rslt}"/>-->
 			<test name="net.scientifichooliganism.javaplug.vo.ActionTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.ApplicationTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.BlockTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.ConfigurationTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.EnvironmentTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.EventTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.MetaDataTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.ReleaseTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.TaskCategoryTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.TaskTest" todir="${rslt}"/>
+			<test name="net.scientifichooliganism.javaplug.vo.TransactionTest" todir="${rslt}"/>
 			<test name="net.scientifichooliganism.javaplug.vo.ValueObjectTest" todir="${rslt}"/>
 		</junit>
 	</target>
