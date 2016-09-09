@@ -1,5 +1,9 @@
 package net.scientifichooliganism.javaplug;
 
+import net.scientifichooliganism.javaplug.util.JavaLogger;
+import net.scientifichooliganism.javaplug.util.LumberJack;
+import net.scientifichooliganism.javaplug.util.SpringBoard;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -12,9 +16,10 @@ public final class WebSvcLayer extends HttpServlet {
 
 	public ActionCatalog ac = null;
 	public DataLayer dl = null;
+	private LumberJack logger;
 
 	public WebSvcLayer() {
-		//
+        logger = JavaLogger.getInstanceForContext(this.getClass().getName());
 	}
 
 	@Override
@@ -54,7 +59,7 @@ public final class WebSvcLayer extends HttpServlet {
 				}
 			}
 			catch(Exception exc){
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 		}
 		return contentType;
@@ -179,7 +184,7 @@ public final class WebSvcLayer extends HttpServlet {
 					break;
 			}
 		} catch (IOException exc){
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 
@@ -210,7 +215,7 @@ public final class WebSvcLayer extends HttpServlet {
 				try {
 					paramClass = Class.forName(argTypes[i]);
 				} catch (ClassNotFoundException exc) {
-					exc.printStackTrace();
+                    logger.logException(exc, SpringBoard.ERROR);
 				}
 
 				if (paramClass == null) {
@@ -296,13 +301,13 @@ public final class WebSvcLayer extends HttpServlet {
 					}
 					reader.close();
 				} catch (Exception exc) {
-					exc.printStackTrace();
+                    logger.logException(exc, SpringBoard.ERROR);
 				}
 			} else {
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource requested does not exist");
 			}
 		} catch (Exception exc) {
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 	}
 
@@ -464,7 +469,7 @@ public final class WebSvcLayer extends HttpServlet {
 		try{
 			klass = Class.forName(className);
 		} catch (ClassNotFoundException exc){
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 
 		if(klass != null){
@@ -499,7 +504,7 @@ public final class WebSvcLayer extends HttpServlet {
 		try {
 			content.read(buffer);
 		} catch(Exception exc){
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 		Object result = null;
 		if (contentType != null && contentType.contains("xml")) {
@@ -537,7 +542,7 @@ public final class WebSvcLayer extends HttpServlet {
 			try{
 				response.getWriter().write(result);
 			} catch(Exception exc){
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {

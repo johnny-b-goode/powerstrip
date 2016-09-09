@@ -3,6 +3,9 @@ package net.scientifichooliganism.javaplug;
 import net.scientifichooliganism.javaplug.interfaces.*;
 import net.scientifichooliganism.javaplug.query.Query;
 import net.scientifichooliganism.javaplug.query.QueryNode;
+import net.scientifichooliganism.javaplug.util.JavaLogger;
+import net.scientifichooliganism.javaplug.util.LumberJack;
+import net.scientifichooliganism.javaplug.util.SpringBoard;
 import net.scientifichooliganism.javaplug.vo.BaseAction;
 
 import java.lang.reflect.Method;
@@ -23,6 +26,7 @@ public final class DataLayer {
 	private int sequenceCount = 0;
 	private int sequenceReset = -1;
 	private String defaultStore;
+    private LumberJack logger;
 
 	/**
 	* The default constructor.
@@ -31,6 +35,7 @@ public final class DataLayer {
 		stores = new Vector<>();
 		defaultStore = null;
 		storeMap = new TreeMap<>();
+		logger = JavaLogger.getInstanceForContext(this.getClass().getName());
 	}
 
 	public static DataLayer getInstance () {
@@ -82,8 +87,7 @@ public final class DataLayer {
 			dl.persist(changeAction);
 		}
 		catch (Exception exc) {
-//			Logger.log(exc.getMessage());
-			exc.printStackTrace();
+            exc.printStackTrace();
 		}
 	}
 
@@ -204,7 +208,7 @@ public final class DataLayer {
 		try {
 			translatedQuery.copy(translateQuery(query));
 		} catch (Exception exc){
-			exc.printStackTrace();
+			logger.logException(exc, SpringBoard.ERROR);
 		}
 
 		if (stores.size() <= 0) {
@@ -238,7 +242,7 @@ public final class DataLayer {
 					executorService.execute(r);
 				}
 				catch (Exception exc) {
-					exc.printStackTrace();
+                    logger.logException(exc, SpringBoard.ERROR);
 				}
 			}
 
@@ -248,7 +252,7 @@ public final class DataLayer {
 			try{
 				executorService.awaitTermination(5, TimeUnit.MINUTES);
 			} catch (InterruptedException exc){
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 		}
 
@@ -287,7 +291,7 @@ public final class DataLayer {
 					}
 				}
 			} catch(Exception exc){
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 		}
 
@@ -337,7 +341,7 @@ public final class DataLayer {
 					} catch (ClassNotFoundException exc){
 						// If this gets called something probably went
 						// terribly wrong
-						exc.printStackTrace();
+                        logger.logException(exc, SpringBoard.ERROR);
 					}
 				}
 			}
@@ -390,7 +394,7 @@ public final class DataLayer {
 				}
 			} catch (ClassNotFoundException exc){
 			    // Something went terribly wrong!
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 
 			if(memberIsType){
@@ -420,7 +424,7 @@ public final class DataLayer {
 				}
 			} catch (ClassNotFoundException exc){
 			    // Something went terribly wrong!
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 
 			if(memberIsType){
@@ -484,6 +488,7 @@ public final class DataLayer {
 				try {
 					result = getter.invoke(result);
 				} catch (Exception exc){
+					logger.logException(exc, SpringBoard.ERROR);
 					throw new RuntimeException("Could not find " + propertyStr + " on object " + object.getClass().getName());
 				}
 			}
