@@ -2,6 +2,9 @@ package net.scientifichooliganism.javaplug;
 
 import javafx.util.Pair;
 import net.scientifichooliganism.javaplug.annotations.Param;
+import net.scientifichooliganism.javaplug.util.JavaLogger;
+import net.scientifichooliganism.javaplug.util.LumberJack;
+import net.scientifichooliganism.javaplug.util.SpringBoard;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -34,11 +37,13 @@ public final class ActionCatalog {
 	ConcurrentHashMap<String, Object> objects;
 	ConcurrentHashMap<String, Method> methods;
     ConcurrentHashMap<String, String> paramMap;
+	LumberJack logger;
 
 	/**
 	* The default constructor.
 	*/
 	private ActionCatalog () {
+		logger = JavaLogger.getInstanceForContext(this.getClass().getName());
 		try {
 			actions = new String[1][3];
 			plugins = new ConcurrentHashMap<String, String>();
@@ -49,7 +54,7 @@ public final class ActionCatalog {
 			paramMap = new ConcurrentHashMap<>();
 		}
 		catch (Exception exc) {
-			exc.printStackTrace();
+			logger.logException(exc, SpringBoard.ERROR);
 		}
 	}
 
@@ -90,7 +95,7 @@ public final class ActionCatalog {
 			plugins.putIfAbsent(pluginName, pluginPath);
 		}
 		catch (Exception exc) {
-			exc.printStackTrace();
+			logger.logException(exc, SpringBoard.ERROR);
 		}
 	}
 
@@ -218,7 +223,7 @@ public final class ActionCatalog {
 					}
 				}
 			} catch (ClassNotFoundException exc) {
-				exc.printStackTrace();
+				logger.logException(exc, SpringBoard.ERROR);
 			}
 		}
 
@@ -810,6 +815,7 @@ public final class ActionCatalog {
 //						System.out.println("objectMethod.toString(): " + objectMethod.toString());
 					}
 					catch (NoSuchMethodException exc){
+						logger.logException(exc, SpringBoard.ERROR);
 						objectMethod = findMethod(klass, actions[action][2], args);
 //						System.out.println("	klass:" + klass.getName());
 //						System.out.println("	objectMethod.toString(): " + objectMethod.toString());
@@ -853,8 +859,7 @@ public final class ActionCatalog {
 				}
 			}
 			catch (Exception exc) {
-//				Logger.log(exc.getMessage());
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 		}
 

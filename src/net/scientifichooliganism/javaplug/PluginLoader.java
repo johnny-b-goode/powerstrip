@@ -3,6 +3,9 @@ package net.scientifichooliganism.javaplug;
 import net.scientifichooliganism.javaplug.interfaces.Action;
 import net.scientifichooliganism.javaplug.interfaces.Configuration;
 import net.scientifichooliganism.javaplug.interfaces.Task;
+import net.scientifichooliganism.javaplug.util.JavaLogger;
+import net.scientifichooliganism.javaplug.util.LumberJack;
+import net.scientifichooliganism.javaplug.util.SpringBoard;
 import net.scientifichooliganism.javaplug.vo.BaseTask;
 
 import java.io.*;
@@ -22,11 +25,12 @@ import java.util.zip.ZipInputStream;
 */
 public class PluginLoader {
 	private static ClassLoader defaultClassLoader = ClassLoader.getSystemClassLoader();
+    private static LumberJack logger;
 	/**
 	* The default constructor.
 	*/
 	public PluginLoader() {
-		//
+        logger = JavaLogger.getInstanceForContext(this.getClass().getName());
 	}
 
 	public static String extractPlugin (String pluginPath) throws IllegalArgumentException {
@@ -95,17 +99,17 @@ public class PluginLoader {
 
 			}
 			catch (ZipException zxc) {
-				zxc.printStackTrace();
+                logger.logException(zxc, SpringBoard.ERROR);
 			}
 			catch (IOException iox) {
-				iox.printStackTrace();
+                logger.logException(iox, SpringBoard.ERROR);
 			}
 			finally {
 				try {
 					zipIn.close();
 				}
 				catch (Exception exc) {
-					exc.printStackTrace();
+                    logger.logException(exc, SpringBoard.ERROR);
 				}
 			}
 
@@ -113,7 +117,7 @@ public class PluginLoader {
 			loadLibraries(pluginDirectory);
 		}
 		catch (Exception exc) {
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 
 		return strRet;
@@ -157,7 +161,7 @@ public class PluginLoader {
 			}
 		}
 		catch (Exception exc) {
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 
 		return pluginMap;
@@ -191,7 +195,7 @@ public class PluginLoader {
 						}
 					}
 					catch (Exception exc) {
-						exc.printStackTrace();
+                        logger.logException(exc, SpringBoard.ERROR);
 					}
 				}
 				else {
@@ -229,7 +233,7 @@ public class PluginLoader {
 						mthd.invoke((defaultClassLoader), new Object[]{url});
 					}
 					catch (Exception exc) {
-						exc.printStackTrace();
+                        logger.logException(exc, SpringBoard.ERROR);
 					}
 				}
 
@@ -239,11 +243,11 @@ public class PluginLoader {
 			}
 			catch (Exception exc) {
 //				System.out.println("messin' with the classloader failed:");
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 		}
 		catch (Exception exc) {
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 
 		return ac;
@@ -260,7 +264,7 @@ public class PluginLoader {
 				addUrlMethod.setAccessible(true);
 				addUrlMethod.invoke(defaultClassLoader, new Object[]{file.toURI().toURL()});
 			} catch (Exception exc){
-				exc.printStackTrace();
+                logger.logException(exc, SpringBoard.ERROR);
 			}
 		} else if(file.isDirectory()){
 			for(File item : file.listFiles()){
@@ -404,7 +408,7 @@ public class PluginLoader {
 			}
 		}
 		catch (Exception exc) {
-			exc.printStackTrace();
+            logger.logException(exc, SpringBoard.ERROR);
 		}
 	}
 
