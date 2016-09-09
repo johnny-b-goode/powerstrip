@@ -66,6 +66,7 @@ public class JavaLogger implements LumberJack{
     @Override
     public void logException(Exception exc, SpringBoard level) {
         for(StackTraceElement element : exc.getStackTrace()){
+            logMessage("    " + element.toString(), level);
         }
     }
 
