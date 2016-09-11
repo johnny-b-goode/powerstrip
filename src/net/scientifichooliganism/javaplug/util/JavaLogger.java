@@ -1,37 +1,21 @@
 package net.scientifichooliganism.javaplug.util;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class JavaLogger implements LumberJack{
-
+public class JavaLogger extends LumberJack{
     public static void main(String args[]){
-        LumberJack logger = JavaLogger.getInstanceForContext(JavaLogger.class.getName());
+        LumberJack logger = LumberJack.getInstanceForContext(JavaLogger.class.getName());
         logger.config("config");
         logger.info("info");
         logger.log("log");
         logger.warn("warn");
         logger.error("error");
     }
-
-    private static Map<String, LumberJack> loggers = new ConcurrentHashMap<>();
-
-    public static synchronized LumberJack getInstanceForContext(String context) {
-        LumberJack instance;
-        if(loggers.containsKey(context)){
-            instance = loggers.get(context);
-        } else {
-            instance = new JavaLogger(context);
-        }
-        return instance;
-    }
-
     Logger logger;
-    private JavaLogger(String name) {
+    public JavaLogger(String name) {
         logger = Logger.getLogger(name);
         logger.setUseParentHandlers(false);
         for(Handler h : logger.getHandlers()){
