@@ -8,12 +8,14 @@ import java.util.logging.Logger;
 public class JavaLogger extends LumberJack{
     public static void main(String args[]){
         LumberJack logger = LumberJack.getInstanceForContext(JavaLogger.class.getName());
+        logger.setLogLevel(SpringBoard.INFO);
         logger.config("config");
         logger.info("info");
         logger.log("log");
         logger.warn("warn");
         logger.error("error");
     }
+
     Logger logger;
     public JavaLogger(String name) {
         logger = Logger.getLogger(name);
@@ -22,6 +24,7 @@ public class JavaLogger extends LumberJack{
             logger.removeHandler(h);
         }
         ConsoleHandler consoleHandler = new ConsoleHandler();
+        consoleHandler.setLevel(Level.FINE);
         consoleHandler.setFormatter(new JavaLoggerFormatter());
         logger.addHandler(consoleHandler);
     }
@@ -54,8 +57,34 @@ public class JavaLogger extends LumberJack{
         }
     }
 
+    @Override
+    public void setLogLevel(SpringBoard level){
+        switch(level){
+            case CONFIG:
+                logger.setLevel(Level.FINE);
+                break;
+            case INFO:
+                logger.setLevel(Level.CONFIG);
+                break;
+            case LOG:
+                logger.setLevel(Level.INFO);
+                break;
+            case WARN:
+                logger.setLevel(Level.WARNING);
+                break;
+            case ERROR:
+                logger.setLevel(Level.SEVERE);
+                break;
+            default:
+                logger.setLevel(Level.INFO);
+        }
+    }
+
+    // TODO: Thought, do we need or want to abstract handlers?
     public void addHandler(Handler handler){
+        // TODO: Should we be enforcing set formats and levels?
         handler.setFormatter(new JavaLoggerFormatter());
+        handler.setLevel(Level.FINE);
         logger.addHandler(handler);
     }
 }
