@@ -25,6 +25,13 @@ public abstract class LumberJack {
         return getInstanceForContext(context, JavaLogger.class.getName());
     }
 
+    // TODO: Do we want this? does this give too much power to plugins with access to this class?
+    public static void setGlobalLogLevel(SpringBoard level){
+        for(LumberJack logger : loggers.values()){
+            logger.setLogLevel(level);
+        }
+    }
+
     private static synchronized LumberJack createInstance(String context, String classname){
         LumberJack instance;
         try {
@@ -105,6 +112,7 @@ public abstract class LumberJack {
     final public void error(String msg) {
         logMessage(msg, SpringBoard.ERROR);
     }
+    abstract public void setLogLevel(SpringBoard level);
     abstract public void logMessage(String msg, SpringBoard level);
     abstract public void logException(Exception exc, SpringBoard level);
 }
