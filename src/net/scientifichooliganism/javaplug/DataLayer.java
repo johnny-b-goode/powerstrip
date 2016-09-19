@@ -69,6 +69,8 @@ public final class DataLayer {
 			PluginLoader.bootstrap();
 			DataLayer dl = DataLayer.getInstance();
 
+			dl.query("WHERE Object.Test == \"test\"");
+
 			Action action = new BaseAction();
 			action.setName("My Action Name");
 			action.setMethod("New method");
@@ -182,14 +184,14 @@ public final class DataLayer {
 	I think the smart thing to do here is to hand the query to the plugin and let the plugin figure out what
 	to do with it.*/
 	public Collection query (String query) throws IllegalArgumentException, RuntimeException {
-//		System.out.println("query(String)");
+        logger.info("DataLayer.query(String) with [" + query + "]");
 		return query(ActionCatalog.getInstance(), query);
 	}
-
-	//TODO: Modify this method to take a query object and overload to take a string,
-	//or just use query(String).
-	public Collection query (ActionCatalog ac, String queryStr) throws IllegalArgumentException, RuntimeException {
-//		System.out.println("DataLayer.query(ActionCatalog, String)");
+	public Collection query(ActionCatalog ac, String queryStr) throws IllegalArgumentException, RuntimeException {
+		return query(ac, new Query(queryStr));
+	}
+	public Collection query (ActionCatalog ac, Query query) throws IllegalArgumentException, RuntimeException {
+        logger.info("DataLayer.query(ActionCatalog, String)");
 
 		if (ac == null) {
 			throw new RuntimeException("query(ActionCatalog, String) ActionCatalog is null");
@@ -201,10 +203,8 @@ public final class DataLayer {
 
 		final CopyOnWriteArrayList results = new CopyOnWriteArrayList();
 		// Query translation for plugins
-		Query query = new Query(queryStr);
 		final Query translatedQuery = new Query();
 
-		//TODO: This will always strip the WHERE clause - fix
 		try {
 			translatedQuery.copy(translateQuery(query));
 		} catch (Exception exc){
@@ -253,6 +253,7 @@ public final class DataLayer {
 				executorService.awaitTermination(5, TimeUnit.MINUTES);
 			} catch (InterruptedException exc){
                 logger.logException(exc, SpringBoard.ERROR);
+                return null;
 			}
 		}
 
@@ -269,7 +270,8 @@ public final class DataLayer {
 	}
 
 	private Collection queryPlugin (ActionCatalog ac, String plugin, Query query){
-//		System.out.println("DataLayer.queryPlugin(ActionCatalog, String, String)");
+		logger.info("DataLayer.queryPlugin(ActionCatalog, String, Query) with [_, " + plugin + ", " + query.toString() + "]");
+
 		Vector<? extends ValueObject> ret = null;
 
 		if (ac.isPluginActive(plugin)) {
@@ -330,7 +332,6 @@ public final class DataLayer {
 			for(Class dataType : sortedData.keySet()){
 			    for(String queryType : qualifiedTypes) {
 			    	try {
-			    	    // TODO: Switch classes they are backwards
 						if (Class.forName(queryType).isAssignableFrom(dataType)) {
 							for (Object object : sortedData.get(dataType)) {
 								if (checkDataAgainstQuery(object, tree, sortedData)) {
