@@ -70,7 +70,6 @@ public final class ActionCatalog {
 
 	/**add a plugin*/
 	public void addPlugin (String pluginName, String pluginPath) throws IllegalArgumentException {
-//		System.out.println("Adding plugin: " + pluginName + " with path: " + pluginPath);
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addPlugin (String, String) was called with a null string");
 		}
@@ -91,6 +90,8 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("addPlugin (String, String) was called with an empty string");
 		}
 
+		logger.info("ActionCatalog.addPlugin(String, String) called with [" + pluginName + ", " + pluginPath + "]");
+
 		try {
 			plugins.putIfAbsent(pluginName, pluginPath);
 		}
@@ -101,8 +102,6 @@ public final class ActionCatalog {
 
 	/**add an action*/
 	public void addAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
-		System.out.println("ActionCatalog.addAction(String, String, String)");
-//		System.out.println("ActionCatalog.addAction(" + pluginName + ", " + className +", " + methodName + ")");
 		if (pluginName == null) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with a null string");
 		}
@@ -132,6 +131,9 @@ public final class ActionCatalog {
 		if (methodName.length() == 0) {
 			throw new IllegalArgumentException("addAction(String, String, String, String) was called with an empty string");
 		}
+
+        logger.info("ActionCatalog.addAction(String, String, String) called with "
+				+ "[" + pluginName + ", " + className + ", " + methodName + "]");
 
 		if (actions.length == 0) {
 			actions = new String[1][3];
@@ -166,7 +168,7 @@ public final class ActionCatalog {
 	}
 
 	public Map<String, String> getParameterMap(String[] action){
-		System.out.println("ActionCatalog.getParameterMap(String[])");
+        logger.info("ActionCatalog.getParameterMap(String[])");
 	    String className = action[1];
 		String methodName = action[2];
 		Map<String, String> ret = new TreeMap<>();
@@ -204,7 +206,6 @@ public final class ActionCatalog {
 
 						methodSignature = methodSignature.substring(0, methodSignature.length() - 1);
 						methodSignature += ")";
-//                        System.out.println(methodSignature);
 
 						for(Annotation[] paramAnnotation : methodAnnotations){
 							for(Annotation annotation : paramAnnotation){
@@ -240,7 +241,8 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("findAction(String) was called with an empty string");
 		}
 
-//		System.out.println("ActionCatalog.findAction(String, String)");
+		logger.info("ActionCatalog.findAction(String) called with [" + query + "]");
+
 		query = query.trim();
 		String[] ret = null;
 		String queryMethod = null;
@@ -391,6 +393,8 @@ public final class ActionCatalog {
 			throw new IllegalArgumentException("removePlugin(String) was called with an empty string");
 		}
 
+		logger.info("ActionCatalog.removePlugin(String) called with [" + pluginName + "]");
+
 		if (plugins.containsKey(pluginName)) {
 			plugins.remove(pluginName);
 		}
@@ -413,7 +417,7 @@ public final class ActionCatalog {
 
 	/**remove an action from the catalog*/
 	public void removeAction (String pluginName, String className, String methodName) throws IllegalArgumentException {
-//		System.out.println("ActionCatalog.removeAction(String, String, String)");
+
 		if (pluginName == null) {
 			throw new IllegalArgumentException("removeAction(String, String, String) was called with a null string");
 		}
@@ -437,6 +441,9 @@ public final class ActionCatalog {
 		if (methodName.length() == 0) {
 			throw new IllegalArgumentException("removeAction(String, String, String) was called with an empty string");
 		}
+
+		logger.log("ActionCatalog.removeAction(String, String, String) called with "
+				+ pluginName + " " + className + " " + methodName);
 
 		String newActions[][] = new String[1][3];
 

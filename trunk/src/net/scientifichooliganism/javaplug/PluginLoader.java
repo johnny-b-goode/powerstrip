@@ -25,13 +25,11 @@ import java.util.zip.ZipInputStream;
 */
 public class PluginLoader {
 	private static ClassLoader defaultClassLoader = ClassLoader.getSystemClassLoader();
-    private static LumberJack logger;
+    private static LumberJack logger = JavaLogger.getInstanceForContext(PluginLoader.class.getName());
 	/**
 	* The default constructor.
 	*/
-	public PluginLoader() {
-        logger = JavaLogger.getInstanceForContext(this.getClass().getName());
-	}
+	public PluginLoader() { }
 
 	public static String extractPlugin (String pluginPath) throws IllegalArgumentException {
 		if (pluginPath == null) {
@@ -42,6 +40,8 @@ public class PluginLoader {
 			throw new IllegalArgumentException("extractPlugin (String) was passed an empty string");
 		}
 
+		logger.info("PluginLoader.extractPlugin(String) called with [" + pluginPath + "]");
+
 		return extractPlugin(new File(pluginPath));
 	}
 
@@ -51,6 +51,8 @@ public class PluginLoader {
 		if (pluginArchive == null) {
 			throw new IllegalArgumentException("extractPlugin(File) was called with null");
 		}
+
+		logger.info("PluginLoader.extractPlugin(File)");
 
 		try {
 			String pluginDirectory = pluginArchive.getCanonicalPath();
@@ -128,7 +130,18 @@ public class PluginLoader {
 	}
 
 	public static ConcurrentHashMap<String, String> findPlugins (String startingPath, String pluginsDirectoryName) {
-//		System.out.println("findPlugins(String, String) called with " + startingPath + ", " + pluginsDirectoryName);
+		if(startingPath == null){
+			throw new IllegalArgumentException("findPlugins(String, String) called with null startingPath");
+		}
+		if(pluginsDirectoryName == null){
+			throw new IllegalArgumentException("findPlugins(String, String) called with null pluginsDirectoryName");
+		}
+		if(pluginsDirectoryName.isEmpty()){
+			throw new IllegalArgumentException("findPlugins(String, String) called with empty pluginsDirectoryName");
+
+		}
+
+		logger.info("findPlugins(String, String) called with [" + startingPath + ", " + pluginsDirectoryName + "]");
 		ConcurrentHashMap<String, String> pluginMap = new ConcurrentHashMap<String, String>();
 
 		try {
@@ -169,6 +182,7 @@ public class PluginLoader {
 
 	/**.*/
 	public static ActionCatalog loadActionCatalog () {
+        logger.info("ActionCatalog.loadActionCatalog()");
 		ActionCatalog ac = ActionCatalog.getInstance();
 
 		try {
@@ -254,10 +268,23 @@ public class PluginLoader {
 	}
 
 	private static void loadLibraries(String folderPath){
+		if(folderPath == null){
+			throw new IllegalArgumentException("loadLibraries(String) called with null String.");
+		}
+		if(folderPath.isEmpty()){
+			throw new IllegalArgumentException("loadLibraries(String) called with empty String.");
+		}
+
+		logger.info("ActionCatalog.loadLibraries(String) called with [" + folderPath + "]");
+
 		loadLibraries(new File(folderPath));
 	}
 
 	private static void loadLibraries(File file){
+		if(file == null){
+			throw new IllegalArgumentException("loadLibraries(File) called with a null File.");
+		}
+		logger.info("ActionCatalog.loadLibraries(File)");
 		if(file.isFile() && file.getName().endsWith(".jar")){
 			try {
 				Method addUrlMethod = (URLClassLoader.class).getDeclaredMethod("addURL", new Class[]{URL.class});
