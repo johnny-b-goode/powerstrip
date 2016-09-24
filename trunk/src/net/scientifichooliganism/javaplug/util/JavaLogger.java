@@ -1,5 +1,7 @@
 package net.scientifichooliganism.javaplug.util;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -7,7 +9,7 @@ import java.util.logging.Logger;
 
 public class JavaLogger extends LumberJack{
 	public static void main(String args[]){
-		LumberJack logger = LumberJack.getInstanceForContext(JavaLogger.class.getName());
+		LumberJack logger = getInstanceForContext(JavaLogger.class.getName());
 		logger.setLogLevel(SpringBoard.INFO);
 		logger.config("config");
 		logger.info("info");
@@ -16,8 +18,23 @@ public class JavaLogger extends LumberJack{
 		logger.error("error");
 	}
 
+	private static Map<String, LumberJack> loggers = new HashMap<>();
+
+	public static LumberJack getInstanceForContext(String context){
+		LumberJack logger;
+
+		if(loggers.containsKey(context)){
+			logger = loggers.get(context);
+		}
+		else {
+			logger = new JavaLogger(context);
+		}
+
+		return logger;
+	}
+
 	Logger logger;
-	public JavaLogger(String name) {
+	private JavaLogger(String name) {
 		logger = Logger.getLogger(name);
 		logger.setUseParentHandlers(false);
 		for(Handler h : logger.getHandlers()){
@@ -32,12 +49,10 @@ public class JavaLogger extends LumberJack{
 	@Override
 	public void logMessage(String msg, SpringBoard level) {
 		switch(level){
-			case CONFIG:
-				logger.log(Level.FINE, msg);
-				break;
 			case INFO:
 				logger.log(Level.CONFIG, msg);
 				break;
+			case CONFIG:
 			case LOG:
 				logger.log(Level.INFO, msg);
 				break;
@@ -60,12 +75,10 @@ public class JavaLogger extends LumberJack{
 	@Override
 	public void setLogLevel(SpringBoard level){
 		switch(level){
-			case CONFIG:
-				logger.setLevel(Level.FINE);
-				break;
 			case INFO:
 				logger.setLevel(Level.CONFIG);
 				break;
+			case CONFIG:
 			case LOG:
 				logger.setLevel(Level.INFO);
 				break;
@@ -80,11 +93,9 @@ public class JavaLogger extends LumberJack{
 		}
 	}
 
-	// TODO: Thought, do we need or want to abstract handlers?
 	public void addHandler(Handler handler){
-		// TODO: Should we be enforcing set formats and levels?
 		handler.setFormatter(new JavaLoggerFormatter());
-		handler.setLevel(Level.FINE);
+		handler.setLevel(Level.CONFIG);
 		logger.addHandler(handler);
 	}
 }
