@@ -1,12 +1,10 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Block;
-
-public class BaseBlock extends BaseValueObject implements Block{
+public class Block extends ValueObject {
 	private String objectBlocked;
 	private String instanceBlocked;
 
-	public BaseBlock() {
+	public Block() {
 		super();
 		objectBlocked = null;
 		instanceBlocked = null;

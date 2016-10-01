@@ -1,10 +1,8 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Transaction;
+public class Transaction extends ValueObject {
 
-public class BaseTransaction extends BaseValueObject implements Transaction {
-
-	public BaseTransaction() {
+	public Transaction() {
 		super();
 	}
 

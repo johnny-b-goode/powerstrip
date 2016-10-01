@@ -1,15 +1,13 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.*;
-
-public class BaseMetaData extends BaseValueObject implements MetaData {
+public class MetaData extends ValueObject {
 	private String object;
 	private String objectID;
 	private int sequence;
 	private String key;
 	private String value;
 
-	public BaseMetaData () {
+	public MetaData () {
 		super();
 		object = null;
 		objectID = null;

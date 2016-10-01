@@ -1,16 +1,15 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Release;
 import java.util.Date;
 
-public class BaseRelease extends BaseValueObject implements Release{
+public class Release extends ValueObject {
 	private String application;
 	private String name;
 	private String description;
 	private Date dueDate;
 	private Date releaseDate;
 
-	public BaseRelease() {
+	public Release() {
 		super();
 		application = null;
 		name = null;

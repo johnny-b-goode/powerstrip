@@ -1,11 +1,10 @@
 package net.scientifichooliganism.javaplug;
 
-import net.scientifichooliganism.javaplug.interfaces.*;
 import net.scientifichooliganism.javaplug.query.Query;
 import net.scientifichooliganism.javaplug.query.QueryNode;
 import net.scientifichooliganism.javaplug.util.LumberJack;
 import net.scientifichooliganism.javaplug.util.SpringBoard;
-import net.scientifichooliganism.javaplug.vo.BaseAction;
+import net.scientifichooliganism.javaplug.vo.*;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -70,7 +69,7 @@ public final class DataLayer {
 
 			dl.query("WHERE Object.Test == \"test\"");
 
-			Action action = new BaseAction();
+			Action action = new Action();
 			action.setName("My Action Name");
 			action.setMethod("New method");
 			action.setURL("google.com");
