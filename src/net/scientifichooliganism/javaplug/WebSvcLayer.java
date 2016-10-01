@@ -1,6 +1,5 @@
 package net.scientifichooliganism.javaplug;
 
-import net.scientifichooliganism.javaplug.util.JavaLogger;
 import net.scientifichooliganism.javaplug.util.LumberJack;
 import net.scientifichooliganism.javaplug.util.SpringBoard;
 
@@ -19,7 +18,7 @@ public final class WebSvcLayer extends HttpServlet {
 	private LumberJack logger;
 
 	public WebSvcLayer() {
-        logger = JavaLogger.getInstanceForContext(this.getClass().getName());
+        logger = LumberJack.getInstanceForContext(this.getClass().getName());
 	}
 
 	@Override

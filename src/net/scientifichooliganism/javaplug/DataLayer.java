@@ -3,7 +3,6 @@ package net.scientifichooliganism.javaplug;
 import net.scientifichooliganism.javaplug.interfaces.*;
 import net.scientifichooliganism.javaplug.query.Query;
 import net.scientifichooliganism.javaplug.query.QueryNode;
-import net.scientifichooliganism.javaplug.util.JavaLogger;
 import net.scientifichooliganism.javaplug.util.LumberJack;
 import net.scientifichooliganism.javaplug.util.SpringBoard;
 import net.scientifichooliganism.javaplug.vo.BaseAction;
@@ -35,7 +34,7 @@ public final class DataLayer {
 		stores = new Vector<>();
 		defaultStore = null;
 		storeMap = new TreeMap<>();
-		logger = JavaLogger.getInstanceForContext(this.getClass().getName());
+		logger = LumberJack.getInstanceForContext(this.getClass().getName());
 	}
 
 	public static DataLayer getInstance () {

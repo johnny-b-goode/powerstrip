@@ -1,49 +1,32 @@
 package net.scientifichooliganism.javaplug.util;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class JavaLogger extends LumberJack{
-	public static void main(String args[]){
-		LumberJack logger = getInstanceForContext(JavaLogger.class.getName());
-		logger.setLogLevel(SpringBoard.INFO);
-		logger.config("config");
-		logger.info("info");
-		logger.log("log");
-		logger.warn("warn");
-		logger.error("error");
-	}
+	private static final SpringBoard DEFAULT_MESSAGE_LEVEL = SpringBoard.INFO;
+	private static final SpringBoard DEFAULT_EXCEPTION_LEVEL = SpringBoard.WARN;
+	private Logger logger;
 
-	private static Map<String, LumberJack> loggers = new HashMap<>();
-
-	public static LumberJack getInstanceForContext(String context){
-		LumberJack logger;
-
-		if(loggers.containsKey(context)){
-			logger = loggers.get(context);
-		}
-		else {
-			logger = new JavaLogger(context);
-		}
-
-		return logger;
-	}
-
-	Logger logger;
-	private JavaLogger(String name) {
+	protected JavaLogger(String name) {
 		logger = Logger.getLogger(name);
 		logger.setUseParentHandlers(false);
+
 		for(Handler h : logger.getHandlers()){
 			logger.removeHandler(h);
 		}
+
 		ConsoleHandler consoleHandler = new ConsoleHandler();
 		consoleHandler.setLevel(Level.FINE);
 		consoleHandler.setFormatter(new JavaLoggerFormatter());
 		logger.addHandler(consoleHandler);
+	}
+
+	@Override
+	public void logMessage(String msg) {
+		logMessage(msg, DEFAULT_MESSAGE_LEVEL);
 	}
 
 	@Override
@@ -63,6 +46,11 @@ public class JavaLogger extends LumberJack{
 				logger.log(Level.SEVERE, msg);
 				break;
 		}
+	}
+
+	@Override
+	public void logException(Exception exc) {
+		logException(exc, DEFAULT_EXCEPTION_LEVEL);
 	}
 
 	@Override
