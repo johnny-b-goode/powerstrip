@@ -305,14 +305,8 @@ public final class DataLayer {
 		// Sort data by class type
 		Map<Class, Collection> sortedData = new HashMap<>();
 		sortedData.put(Action.class, new ArrayList());
-		sortedData.put(Application.class, new ArrayList());
-		sortedData.put(Block.class, new ArrayList());
 		sortedData.put(Configuration.class, new ArrayList());
-		sortedData.put(Environment.class, new ArrayList());
 		sortedData.put(Event.class, new ArrayList());
-		sortedData.put(Release.class, new ArrayList());
-		sortedData.put(Task.class, new ArrayList());
-		sortedData.put(TaskCategory.class, new ArrayList());
 		sortedData.put(Transaction.class, new ArrayList());
 
 		for(Object o : data){
