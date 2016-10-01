@@ -1,11 +1,10 @@
 package net.scientifichooliganism.javaplug;
 
-import net.scientifichooliganism.javaplug.interfaces.Action;
-import net.scientifichooliganism.javaplug.interfaces.Configuration;
-import net.scientifichooliganism.javaplug.interfaces.Task;
 import net.scientifichooliganism.javaplug.util.LumberJack;
 import net.scientifichooliganism.javaplug.util.SpringBoard;
-import net.scientifichooliganism.javaplug.vo.BaseTask;
+import net.scientifichooliganism.javaplug.vo.Action;
+import net.scientifichooliganism.javaplug.vo.Configuration;
+import net.scientifichooliganism.javaplug.vo.Task;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -445,7 +444,7 @@ public class PluginLoader {
 
 		Collection<Configuration> configs = dl.query("Configuration WHERE Configuration.Module == \"XMLPlugin\"");
 
-		Task task = new BaseTask();
+		Task task = new Task();
 		task.setName("Testing Task");
 		task.setDescription("A task to test persistence!");
 

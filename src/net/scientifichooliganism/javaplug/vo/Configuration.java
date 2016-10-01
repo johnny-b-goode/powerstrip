@@ -1,14 +1,12 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Configuration;
-
-public class BaseConfiguration extends BaseValueObject implements Configuration {
+public class Configuration extends ValueObject {
 	private String module;
 	private int sequence;
 	private String key;
 	private String value;
 
-	public BaseConfiguration() {
+	public Configuration() {
 		super();
 		module = null;
 		sequence = -1;

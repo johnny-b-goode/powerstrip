@@ -1,17 +1,14 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.MetaData;
-import net.scientifichooliganism.javaplug.interfaces.ValueObject;
-
 import java.util.Collection;
 import java.util.Vector;
 
-public class BaseValueObject implements ValueObject {
+public class ValueObject {
 	private String id;
 	private String label;
 	private Collection<MetaData> metadata;
 
-	public BaseValueObject() {
+	public ValueObject() {
 		id = null;
 		label = null;
 		metadata = new Vector<MetaData>();

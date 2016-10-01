@@ -1,10 +1,8 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Event;
+public class Event extends ValueObject {
 
-public class BaseEvent extends BaseValueObject implements Event{
-
-	public BaseEvent() {
+	public Event() {
 		super();
 	}
 

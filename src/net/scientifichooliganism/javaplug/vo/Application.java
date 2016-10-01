@@ -1,12 +1,10 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Application;
-
-public class BaseApplication extends BaseValueObject implements Application {
+public class Application extends ValueObject {
 	private String name;
 	private String description;
 
-	public BaseApplication() {
+	public Application() {
 		super();
 		name = null;
 		description = null;

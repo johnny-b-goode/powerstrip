@@ -1,10 +1,9 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.Task;
-import java.util.Date;
 import java.time.Duration;
+import java.util.Date;
 
-public class BaseTask extends BaseValueObject implements Task {
+public class Task extends ValueObject {
 	private String name;
 	private String description;
 	private boolean concurrent;
@@ -13,7 +12,7 @@ public class BaseTask extends BaseValueObject implements Task {
 	private Date startDate;
 	private Date completedDate;
 
-	public BaseTask() {
+	public Task() {
 		super();
 		name = null;
 		description = null;
