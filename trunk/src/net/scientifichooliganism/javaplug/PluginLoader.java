@@ -3,7 +3,6 @@ package net.scientifichooliganism.javaplug;
 import net.scientifichooliganism.javaplug.interfaces.Action;
 import net.scientifichooliganism.javaplug.interfaces.Configuration;
 import net.scientifichooliganism.javaplug.interfaces.Task;
-import net.scientifichooliganism.javaplug.util.JavaLogger;
 import net.scientifichooliganism.javaplug.util.LumberJack;
 import net.scientifichooliganism.javaplug.util.SpringBoard;
 import net.scientifichooliganism.javaplug.vo.BaseTask;
@@ -25,7 +24,7 @@ import java.util.zip.ZipInputStream;
 */
 public class PluginLoader {
 	private static ClassLoader defaultClassLoader = ClassLoader.getSystemClassLoader();
-    private static LumberJack logger = JavaLogger.getInstanceForContext(PluginLoader.class.getName());
+    private static LumberJack logger = LumberJack.getInstanceForContext(PluginLoader.class.getName());
 	/**
 	* The default constructor.
 	*/
