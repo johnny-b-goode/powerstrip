@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ActionTest {
-    private BaseAction action;
+    private Action action;
 
     public ActionTest(){
         action = null;
@@ -13,7 +13,7 @@ public class ActionTest {
 
     @Before
     public void init(){
-        action = new BaseAction();
+        action = new Action();
     }
 
     @Test

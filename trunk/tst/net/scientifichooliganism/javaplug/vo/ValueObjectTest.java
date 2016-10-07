@@ -1,13 +1,12 @@
 package net.scientifichooliganism.javaplug.vo;
 
-import net.scientifichooliganism.javaplug.interfaces.MetaData;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class ValueObjectTest {
-    private BaseValueObject valueObject;
+    private ValueObject valueObject;
 
     public ValueObjectTest () {
         valueObject = null;
@@ -15,7 +14,7 @@ public class ValueObjectTest {
 
     @Before
     public void init(){
-        valueObject = new BaseValueObject();
+        valueObject = new ValueObject();
     }
 
     @Test
@@ -57,7 +56,7 @@ public class ValueObjectTest {
 
     @Test
     public void addMetaDataTest01(){
-        MetaData data = new BaseMetaData();
+        MetaData data = new MetaData();
         valueObject.addMetaData(data);
         assertEquals(1, valueObject.getMetaData().size());
         assert(valueObject.getMetaData().contains(data));
@@ -70,7 +69,7 @@ public class ValueObjectTest {
 
     @Test
     public void removeMetaDataTest01(){
-        MetaData data = new BaseMetaData();
+        MetaData data = new MetaData();
         valueObject.addMetaData(data);
         assertEquals(1, valueObject.getMetaData().size());
         valueObject.removeMetaData(data);
