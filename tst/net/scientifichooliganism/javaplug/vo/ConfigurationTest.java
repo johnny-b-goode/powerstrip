@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ConfigurationTest {
-    private BaseConfiguration configuration;
+    private Configuration configuration;
 
     public ConfigurationTest(){
         configuration = null;
@@ -14,7 +14,7 @@ public class ConfigurationTest {
 
     @Before
     public void init(){
-        configuration = new BaseConfiguration();
+        configuration = new Configuration();
     }
 
     @Test

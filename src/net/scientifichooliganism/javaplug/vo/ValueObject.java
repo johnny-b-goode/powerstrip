@@ -46,6 +46,7 @@ public class ValueObject {
 	public Collection<MetaData> getMetaData () {
 		return metadata;
 	}
+	public void setMetaData(Collection<MetaData> data){ this.metadata = data; }
 
 	public void addMetaData (MetaData md) throws IllegalArgumentException {
 		removeMetaData(md);

@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class EventTest {
-    private BaseEvent event;
+    private Event event;
 
     public EventTest(){
         event = null;
@@ -14,7 +14,7 @@ public class EventTest {
 
     @Before
     public void init(){
-        event = new BaseEvent();
+        event = new Event();
     }
 
     @Test

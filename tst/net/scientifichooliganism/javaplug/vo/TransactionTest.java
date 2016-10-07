@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class TransactionTest {
-    private BaseTransaction transaction;
+    private Transaction transaction;
 
     public TransactionTest (){
         transaction = null;
@@ -14,7 +14,7 @@ public class TransactionTest {
 
     @Before
     public void init(){
-        transaction = new BaseTransaction();
+        transaction = new Transaction();
     }
 
     @Test

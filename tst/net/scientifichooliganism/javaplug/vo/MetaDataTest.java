@@ -7,7 +7,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class MetaDataTest {
-	private BaseMetaData metadata;
+	private MetaData metadata;
 
 	public MetaDataTest () {
 		metadata = null;
@@ -15,7 +15,7 @@ public class MetaDataTest {
 
 	@Before
 	public void init() {
-		metadata = new BaseMetaData();
+		metadata = new MetaData();
 	}
 
 	@Test
